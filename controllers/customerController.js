@@ -26,7 +26,8 @@ export async function createCustomer (req, res){
           // Save the customer to the database
           const savedCustomer = await newCustomer.save();
 
-      
+        const sessionId = req.session.id;
+          
           res.status(201).json({
             _id: savedCustomer.id,
             username: savedCustomer.username,
@@ -34,6 +35,7 @@ export async function createCustomer (req, res){
             phoneNumber: savedCustomer.phoneNumber,
             location: savedCustomer.location,
             token: generateToken(savedCustomer._id),
+            sessionId
           });
 
     } catch (error) {
@@ -58,7 +60,7 @@ export async function loginCustomer(req, res) {
         const token = generateToken(user._id);
   
         // Create a session for the user
-        req.session.customerId = user._id;
+        const sessionId = req.session.id;
   
         res.status(200).json({
           _id: user._id,
@@ -66,7 +68,7 @@ export async function loginCustomer(req, res) {
           email: user.email,
           location: user.location,
           phoneNumber: user.phoneNumber,
-          token
+          token, sessionId
         });
       } else {
         res.status(400);
