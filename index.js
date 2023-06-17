@@ -13,7 +13,7 @@ const app = express();
 const PORT = process.env.PORT || 5000
 dotenv.config()
 // Middleware setup
-app.use(morgan('tiny'));
+app.use(morgan('dev'));
 connectDB()
 app.use(express.json())
 app.use(cors())
