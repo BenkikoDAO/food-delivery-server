@@ -8,6 +8,7 @@ import session from "express-session";
 import MongoStore from "connect-mongo";
 import { connectDB } from "./config/db.js"
 import customerRoute from './routes/customerRoute.js'
+import vendorRoute from './routes/vendorRoute.js'
 
 const app = express();
 const PORT = process.env.PORT || 5000
@@ -21,7 +22,6 @@ app.use(express.urlencoded({extended:false}))
 app.use(bodyParser.json())
 app.use(helmet())
 
-
 app.use(session({
     secret: process.env.SESSION_SECRET,
     resave: false,
@@ -34,7 +34,8 @@ app.use(session({
     },
   }));
 
-  app.use("/api/v1/auth", customerRoute)
+  app.use("/api/v1/customer-auth", customerRoute)
+  app.use("/api/v1/vendor-auth", vendorRoute)
 
 
 // Start the server
