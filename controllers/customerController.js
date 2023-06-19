@@ -1,10 +1,8 @@
 import Customer from "../models/customer.js";
 import Token from "../models/token.js"
 import bcrypt from "bcrypt"
-import session from "express-session";
+import sgMail from '@sendgrid/mail'
 import jwt from 'jsonwebtoken'
-import crypto from "crypto"
-const bcryptSalt = process.env.BCRYPT_SALT
 
 //Register customer
 export async function createCustomer (req, res){ 
@@ -83,56 +81,78 @@ export async function loginCustomer(req, res) {
     }
   }
 
-  export async function resetPassword (req, res){
-    const { email } = req.body;
-
-    // Validate the email address
+  export const resetPassword = async(req, res) => {
+    const {email} = req.body
+  
+    sgMail.setApiKey(process.env.SENDGRID_APIKEY);
+  
     if (!email) {
       res.status(400).json({ error: 'Please provide an email address' });
       return;
     }
     try {
       const user = await Customer.findOne({ email });
-
+  
       if (!user) throw new Error("User does not exist");
-
-      let token = await Token.findOne({ userId: user._id });
-      if (token) await token.deleteOne();
-      let resetToken = crypto.randomBytes(32).toString("hex");
-      const hash = await bcrypt.hash(resetToken, Number(bcryptSalt));
-
-      await new Token({
-        userId: user._id,
-        token: hash,
-        createdAt: Date.now(),
-      }).save();
-
-      // Send the password reset email to the user
-    const resetLink = `https://your-website.com/reset-password?token=${resetToken}`;
-
-    const transporter = nodemailer.createTransport({
-      service: 'Gmail',
-      auth: {
-        user: 'your-email@example.com',
-        pass: 'your-email-password',
-      },
-    });
-
-    const mailOptions = {
-      from: 'your-email@example.com',
-      to: user.email,
-      subject: 'Password Reset',
-      text: `Dear ${user.username},\n\nPlease click the following link to reset your password: ${resetLink}`,
-    };
-
-    await transporter.sendMail(mailOptions);
-
-    res.status(200).json({ message: 'Password reset email sent' });
-
+  
+  
+      const userId = user.id; // Get the user's ID
+  
+      const resetToken = jwt.sign({ userId }, process.env.JWT_SECRET, { expiresIn: '1h' }); // Generate the reset token
+  
+      const resetLink = `https://e-commerce-munene-m/reset-password?token=${resetToken}`;//remember to change this to a client side route with the form to reset credentials
+  
+      const msg = {
+        to: email,
+        from: 'macmunene364@gmail.com',//remember to change this to the official client side email
+        subject: 'Reset Your Password',
+        text: `Click the following link to reset your password: ${resetLink}`,
+      };
+      sgMail
+      .send(msg)
+      .then(() => {
+        res.status(200).json({ message: 'Reset password email sent' });
+      })
+      .catch((error) => {
+        console.error('Error sending reset password email:', error);
+        res.status(500).json({ error: 'Failed to send reset password email' });
+      });
     } catch (error) {
       console.log(error)
+      res.status(500).json({ error: 'Failed to initiate password reset' });
     }
   }
+  
+  export const updatePassword = async (req, res) => {
+    const { token, newPassword } = req.body; //in the client side, extract token from the reset link url and send it in a hidden input where you set value=<TOKEN>
+  
+    try {
+      // Verify the token
+      const decodedToken = jwt.verify(token, process.env.JWT_SECRET);
+  
+      // Extract the user ID from the decoded token
+      const userId = decodedToken.userId;
+  
+      // Find the user in the database by their ID
+      const user = await Customer.findOne({ _id: userId });
+  
+      if (!user) {
+        throw new Error('User not found');
+      }
+  
+      // Update the user's password
+      const hashedPassword = await bcrypt.hash(newPassword, Number(bcryptSalt));
+      user.password = hashedPassword;
+  
+      // Save the updated user in the database
+      await user.save();
+  
+      res.status(200).json({ message: 'Password updated successfully' });
+    } catch (error) {
+      console.log(error);
+      res.status(400).json({ error: 'Failed to update password' });
+    }
+  };
 
 const generateToken = (id) => {
     return jwt.sign({ id }, process.env.JWT_SECRET, {
@@ -140,4 +160,4 @@ const generateToken = (id) => {
     });
   };
 
-export default { createCustomer, loginCustomer }
+export default { createCustomer, loginCustomer, resetPassword, updatePassword }
