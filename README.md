@@ -17,6 +17,8 @@
 - JWT for authentication
 - bcrypt for password hashing
 - nodemailer for email notifications
+- sendgrid to send the emails to users
+- geolib to calculate geographical distances
 
 ### Prerequisites
 - Node.js installed on your system
