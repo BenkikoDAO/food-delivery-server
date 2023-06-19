@@ -1,5 +1,6 @@
 {
   "dependencies": {
+    "@sendgrid/mail": "^7.7.0",
     "bcrypt": "^5.1.0",
     "body-parser": "^1.20.2",
     "connect-mongo": "^5.0.0",
@@ -27,5 +28,13 @@
   "keywords": [],
   "author": "",
   "license": "ISC",
-  "description": ""
+  "description": "This is the backend server for a food delivery web application. It is built using Node.js and MongoDB to handle vendor and customer data, order management, and delivery calculations.\r ### Features",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/munene-m/food-delivery-server.git"
+  },
+  "bugs": {
+    "url": "https://github.com/munene-m/food-delivery-server/issues"
+  },
+  "homepage": "https://github.com/munene-m/food-delivery-server#readme"
 }
