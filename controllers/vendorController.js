@@ -152,10 +152,30 @@ export const resetPassword = async(req, res) => {
     }
   };
 
+export async function getVendor(req, res) {
+    const vendor = await Vendor.findById(req.params.id)
+    if(!vendor){
+        res.status(400)
+        throw new Error("This vendor does not exist")
+    } else {
+        res.status(200).json(vendor)
+    }
+}
+
+export async function getVendors(req, res) {
+    const vendors = await Vendor.find()
+    if (!vendors) {
+        res.status(400)
+        throw new Error("There are no vendors in the database")
+    } else {
+        res.status(200).json(vendors)
+    }
+}
+
 const generateToken = (id) => {
     return jwt.sign({ id }, process.env.JWT_SECRET, {
       expiresIn: "1d",
     });
   };
 
-  export default { createVendor, loginVendor, resetPassword, updatePassword }
+  export default { createVendor, loginVendor, resetPassword, updatePassword, getVendor, getVendors }
