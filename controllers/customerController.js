@@ -1,5 +1,4 @@
 import Customer from "../models/customer.js";
-import Token from "../models/token.js"
 import bcrypt from "bcrypt"
 import sgMail from '@sendgrid/mail'
 import jwt from 'jsonwebtoken'
