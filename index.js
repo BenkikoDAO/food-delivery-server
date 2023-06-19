@@ -34,7 +34,7 @@ app.use(session({
     },
   }));
 
-  app.use("/auth", customerRoute)
+  app.use("/api/v1/auth", customerRoute)
 
 
 // Start the server
