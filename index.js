@@ -9,6 +9,7 @@ import MongoStore from "connect-mongo";
 import { connectDB } from "./config/db.js"
 import customerRoute from './routes/customerRoute.js'
 import vendorRoute from './routes/vendorRoute.js'
+import menuRoute from './routes/menuRoute.js'
 
 const app = express();
 const PORT = process.env.PORT || 5000
@@ -36,6 +37,7 @@ app.use(session({
 
   app.use("/api/v1/customer-auth", customerRoute)
   app.use("/api/v1/vendor-auth", vendorRoute)
+  app.use("/api/v1/menu", menuRoute)
 
 
 // Start the server
