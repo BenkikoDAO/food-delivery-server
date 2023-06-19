@@ -7,6 +7,6 @@ router.route("/vendor/:vendorId").get(orderController.getOrdersByVendor)
 router.route("/customer/:customerId").get(orderController.getOrdersByCustomer)
 router.route("/order/:id").get(orderController.getOrderById)
 router.route("/update/:id").put(orderController.updateOrderStatus)
-
+router.route("/delete/:id").delete(orderController.deleteOrder)
 
 export default router
