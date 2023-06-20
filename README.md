@@ -1,5 +1,5 @@
 ## Food delivery backend server
- This is the backend server for a food delivery web application. It is built using Node.js and MongoDB to handle vendor and customer data, order management, and delivery calculations.
+ This is the backend server for a food delivery web application. It is built using Node.js and MongoDB to handle vendor and customer data, order management, and delivery fee calculations.
 ### Features
 
 - User authentication and authorization
