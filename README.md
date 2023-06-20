@@ -1,4 +1,4 @@
-## Food delivery backend server
+## Mobile eats backend server
  This is the backend server for a food delivery web application. It is built using Node.js and MongoDB to handle vendor and customer data, order management, and delivery fee calculations.
 ### Features
 
