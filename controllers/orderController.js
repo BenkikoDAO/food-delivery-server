@@ -12,6 +12,19 @@ export async function createOrder(req, res) {
       return res.status(404).json({ error: "Vendor not found" });
     }
     const vendorName = vendor.name;
+    const vendorRiders = vendor.riders;
+
+    // To find available riders
+    const rider = vendorRiders.find((rider) => !rider.isOccupied);
+
+    
+    if (!rider) {
+      return res.status(400).json({ error: 'No available riders' });
+    }
+
+    // Mark the rider as occupied
+    rider.isOccupied = true;
+    await rider.save();
 
     // Calculate the distance between the vendor and the delivery address
     const vendorCoordinates = vendor.location.coordinates;
@@ -40,6 +53,7 @@ export async function createOrder(req, res) {
       vendorName,
       deliveryStatus: "Pending",
       menuItems,
+      rider: rider._id
     });
 
     // Save the order to the database
