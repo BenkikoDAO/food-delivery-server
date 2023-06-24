@@ -46,6 +46,11 @@ const orderSchema = mongoose.Schema({
         type: String,
         required: true
     },
+    rider: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Rider",
+      required: true,
+    },
     menuItems: [menuItemSchema]
 })
 export default mongoose.model("Order", orderSchema)
