@@ -51,8 +51,7 @@ const vendorSchema = new mongoose.Schema(
         phoneNumber: String,
       },
     ],
-  },
-  { timestamps: true }
+  }
 );
 
 export default mongoose.model("Vendor", vendorSchema);
