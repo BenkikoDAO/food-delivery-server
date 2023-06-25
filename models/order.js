@@ -23,9 +23,14 @@ const orderSchema = mongoose.Schema({
         type: mongoose.Schema.Types.ObjectId,
         required: true 
     },
+    customerName: {
+      type: String
+    },
+    customerContact: {
+      type: String
+    },
     vendorName: {
-        type: String,
-        required: true
+        type: String
     },
     deliveryFee: {
         type: Number,
@@ -44,13 +49,8 @@ const orderSchema = mongoose.Schema({
     },
     deliveryStatus:{
         type: String,
-        required: true
-    },
-    rider: {
-      type: mongoose.Schema.Types.ObjectId,
-      ref: "Rider",
-      required: true,
+        default: "Pending"
     },
     menuItems: [menuItemSchema]
-})
+},  { timestamps: true })
 export default mongoose.model("Order", orderSchema)
