@@ -1,30 +1,20 @@
 import geolib from "geolib";
 import Order from "../models/order.js";
 import Vendor from "../models/vendor.js";
+import Customer from "../models/customer.js"
 
 export async function createOrder(req, res) {
   try {
     const { vendorID, customerID, deliveryAddress, menuItems } = req.body;
 
     const vendor = await Vendor.findById(vendorID);
+    const customer = await Customer.findById(customerID);
+
 
     if (!vendor) {
       return res.status(404).json({ error: "Vendor not found" });
     }
     const vendorName = vendor.name;
-    const vendorRiders = vendor.riders;
-
-    // To find available riders
-    const rider = vendorRiders.find((rider) => !rider.isOccupied);
-
-    
-    if (!rider) {
-      return res.status(400).json({ error: 'No available riders' });
-    }
-
-    // Mark the rider as occupied
-    rider.isOccupied = true;
-    await rider.save();
 
     // Calculate the distance between the vendor and the delivery address
     const vendorCoordinates = vendor.location.coordinates;
@@ -48,12 +38,13 @@ export async function createOrder(req, res) {
     const order = new Order({
       vendorID: vendorID,
       customerID: customerID,
+      customerName: customer.username,
+      customerContact: customer.phoneNumber,
       deliveryAddress,
       deliveryFee,
       vendorName,
-      deliveryStatus: "Pending",
-      menuItems,
-      rider: rider._id
+      deliveryStatus,
+      menuItems
     });
 
     // Save the order to the database
@@ -61,7 +52,7 @@ export async function createOrder(req, res) {
 
     res.status(201).json({
       order: savedOrder,
-      message: "Order created successfully",
+      message: "Order sent successfully",
     });
   } catch (error) {
     console.error("Error creating order:", error);
