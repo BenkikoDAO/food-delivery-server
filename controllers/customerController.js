@@ -153,10 +153,40 @@ export async function loginCustomer(req, res) {
     }
   };
 
+  export async function getCustomers(req, res) {
+    try {
+      const customers = await Customer.find();
+  
+      if (!customers) {
+        res.status(400);
+        throw new Error("There are no customers in the database");
+      } else {
+        res.status(200).json(customers);
+      }
+    } catch (error) {
+      console.error("Error getting customers:", error);
+      res.status(500).json({ error: "An error occurred" });
+    }
+  }
+
+  export async function getCustomer(req, res) {
+    try {
+      const customer = await Customer.findById(req.params.id);
+      if (!customer) {
+        res.status(400);
+        throw new Error("This customer does not exist");
+      } else {
+        res.status(200).json(customer);
+      }
+    } catch (error) {
+      console.error("Error getting customers:", error);
+      res.status(500).json({ error: "An error occurred" });
+    }
+  }
 const generateToken = (id) => {
     return jwt.sign({ id }, process.env.JWT_SECRET, {
       expiresIn: "1d",
     });
   };
 
-export default { createCustomer, loginCustomer, resetPassword, updatePassword }
+export default { createCustomer, loginCustomer, resetPassword, updatePassword, getCustomers, getCustomer }
