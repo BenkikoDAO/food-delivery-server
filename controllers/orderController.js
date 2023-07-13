@@ -5,7 +5,7 @@ import Customer from "../models/customer.js"
 
 export async function createOrder(req, res) {
   try {
-    const { vendorID, customerID, deliveryAddress, menuItems } = req.body;
+    const { vendorID, customerID, deliveryAddress, menuItems, deliveryStatus } = req.body;
 
     const vendor = await Vendor.findById(vendorID);
     const customer = await Customer.findById(customerID);
