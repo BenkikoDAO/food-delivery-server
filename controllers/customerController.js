@@ -3,6 +3,7 @@ import bcrypt from "bcrypt"
 import sgMail from '@sendgrid/mail'
 import jwt from 'jsonwebtoken'
 
+let bcryptSalt = process.env.BCRYPT_SALT
 //Register customer
 export async function createCustomer (req, res){ 
     try {
@@ -35,12 +36,12 @@ export async function createCustomer (req, res){
             phoneNumber: savedCustomer.phoneNumber,
             location: savedCustomer.location,
             token: generateToken(savedCustomer._id),
-            sessionId
+            sessionId            
           });
 
     } catch (error) {
         console.error('Error registering customer:', error);
-        res.status(500).json({ error: 'An error occurred' });
+        res.status(400).json({ error: 'An error occurred' });
     }
 }
 
