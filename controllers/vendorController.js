@@ -7,14 +7,14 @@ const bcryptSalt = process.env.BCRYPT_SALT;
 
 export async function createVendor(req, res) {
   try {
-    const { name, email, password, phoneNumber, location, openingHours, closingHours, businessRegistration,} = req.body;
-    if (!name || !email || !password || !phoneNumber || !location || !openingHours || !closingHours) {
+    const { name, password, phoneNumber, location, openingHours, closingHours, businessRegistration } = req.body;
+    if (!password || !name || !phoneNumber || !location || !openingHours || !closingHours) {
       return res.status(400).json({ message: "Please enter all the required fields" });
     }
 
     const hashedPassword = await bcrypt.hash(password, Number(bcryptSalt));
 
-    const newVendor = new Vendor({ name, email, phoneNumber, password: hashedPassword, location, openingHours, closingHours, businessRegistration,});
+    const newVendor = new Vendor({ name, phoneNumber, password: hashedPassword, location, openingHours, closingHours, businessRegistration});
 
     // Save the customer to the database
     const savedVendor = await newVendor.save();
@@ -24,7 +24,6 @@ export async function createVendor(req, res) {
     res.status(201).json({
       _id: savedVendor.id,
       name: savedVendor.name,
-      email: savedVendor.email,
       phoneNumber: savedVendor.phoneNumber,
       location: savedVendor.location,
       openingHours: savedVendor.openingHours,
@@ -36,6 +35,30 @@ export async function createVendor(req, res) {
   } catch (error) {
     console.error("Error registering vendor:", error);
     res.status(500).json({ error: "An error occurred" });
+  }
+}
+
+export async function updateVendor(req, res) {
+  try {
+    // const { vendorId } = req.params.id
+    const vendor = await Vendor.findById(req.params.id)
+    if(!vendor){
+      res.status(400)
+      throw new Error("The vendor does not exist!")
+    } else {
+      const { paymail, publicKey, secretKey, name, phoneNumber, rating, location, openingHours, closingHours, riders } = req.body
+      const updatedVendor = await Vendor.findByIdAndUpdate(
+        req.params.id, 
+        { paymail, publicKey, secretKey, name, phoneNumber, rating, location, openingHours, closingHours, riders },
+         {new:true}
+      )
+  
+      res.status(200).json(updatedVendor)
+    }
+
+  } catch (error) {
+
+    console.log("Error updating vendor: ", error);
   }
 }
 
@@ -251,6 +274,7 @@ export default {
   loginVendor,
   resetPassword,
   updatePassword,
+  updateVendor,
   getVendor,
   getVendors,
   addRider,
