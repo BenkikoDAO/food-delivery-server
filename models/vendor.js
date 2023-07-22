@@ -1,41 +1,42 @@
 import mongoose from "mongoose";
 const vendorSchema = new mongoose.Schema(
   {
-    name: {
-      type: String,
-      required: true,
+    paymail: {
+      type: String
     },
-    email: {
-      type: String,
-      required: true,
-      unique: true,
+    publicKey: {
+      type: String
+    },
+    secretKey: {
+      type: String
     },
     password: {
+      type: String
+    },
+    name: {
       type: String,
-      required: true,
+      unique: true
     },
     phoneNumber: {
-      type: String,
-      required: true,
+      type: String
+    },
+    rating: {
+      type: Number
     },
     location: {
       type: {
         type: String,
         enum: ["Point"], // Specify the type as "Point"
-        required: true,
       },
       coordinates: {
         type: [Number], // Array of [longitude, latitude] values
-        required: true,
       },
     },
     openingHours: {
       type: String,
-      required: true,
     },
     closingHours: {
       type: String,
-      require: true,
     },
     businessRegistration: {
       data: Buffer,
