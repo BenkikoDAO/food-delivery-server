@@ -81,14 +81,15 @@ export async function updateMenuItem (req, res) {
             const updatedMenuItem = await Menu.findByIdAndUpdate(req.params.id, {
                 vendorID, name, description, price
             }, {new: true})
-            res.status(200).json(updatedMenuItem);
+            res.status(201).json(updatedMenuItem);
         }
     } catch (error) {
-        
+        res.status(400).json({message: "The menu you tried to update does not exist"})
     }
 }
 
 export async function getMenuItems(req, res) {
+try {
     const items = await Menu.find()
     if (!items) {
         res.status(400)
@@ -96,26 +97,37 @@ export async function getMenuItems(req, res) {
     } else {
         res.status(200).json(items)
     }
+} catch (error) {
+    res.status(400).json({message: "There are no menu items at this time"})
+}
 }
 
 export async function getMenuItem(req, res) {
-    const item = await Menu.findById(req.params.id)
-    if (!item) {
-        res.status(400)
-        throw new Error("This menu item does not exist")
-    } else {
-        res.status(200).json(item)
+    try {
+        const item = await Menu.findById(req.params.id)
+        if (!item) {
+            res.status(400)
+            throw new Error("This menu item does not exist")
+        } else {
+            res.status(200).json(item)
+        }
+    } catch (error) {
+        res.status(400).json({message: "This menu item does not exist"})
     }
 }
 
 export async function deleteMenuItem(req, res) {
-    const item = await Menu.findById(req.params.id);
-    if(!item) {
-        res.status(404);
-        throw new Error("Item not found ");
-    }else{
-        await Menu.findByIdAndDelete(req.params.id);
-        res.status(200).json({ id: req.params.id, message: "Item deleted" })
+    try {
+        const item = await Menu.findById(req.params.id);
+        if(!item) {
+            res.status(404);
+            throw new Error("Item not found ");
+        }else{
+            await Menu.findByIdAndDelete(req.params.id);
+            res.status(200).json({ id: req.params.id, message: "Item deleted" })
+        }
+    } catch (error) {
+        res.status(400).json({message: "Menu item not found"})
     }
 }
 
