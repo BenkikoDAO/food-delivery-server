@@ -14,6 +14,11 @@ export async function createVendor(req, res) {
 
     const hashedPassword = await bcrypt.hash(password, Number(bcryptSalt));
 
+    const existingVendor = await Vendor.findOne({ name });
+    if (existingVendor) {
+      return res.status(409).json({ message: "Username already in use" });
+    }
+
     const newVendor = new Vendor({ name, phoneNumber, password: hashedPassword, location, openingHours, closingHours, businessRegistration});
 
     // Save the customer to the database
@@ -33,7 +38,7 @@ export async function createVendor(req, res) {
       sessionId,
     });
   } catch (error) {
-    console.error("Error registering vendor:", error);
+    console.log("Error registering vendor:", error);
     res.status(500).json({ error: "An error occurred" });
   }
 }
