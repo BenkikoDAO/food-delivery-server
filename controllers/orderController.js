@@ -100,7 +100,7 @@ export async function getOrdersByVendor(req, res) {
   
       res.status(200).json(orders);
     } catch (error) {
-      res.status(400).json({ error: 'You have not placed any orders' });
+      res.status(400).json({ message: 'You have not placed any orders' });
       console.error('Error getting orders by customer:', error);
     }
   }
@@ -135,7 +135,7 @@ export async function getOrdersByVendor(req, res) {
   
       return res.json({ message: "Order deleted successfully" });
     } catch (error) {
-      res.status(400).json({ error: "The order you tried to delete does not exist" });
+      res.status(400).json({ message: "The order you tried to delete does not exist" });
       console.error("Error deleting order:", error);
     }
   }
