@@ -40,8 +40,8 @@ export async function createCustomer (req, res){
           });
 
     } catch (error) {
+      res.status(400).json({ message: 'Email is already in use!' });
         console.error('Error registering customer:', error);
-        res.status(400).json({ error: 'An error occurred' });
     }
 }
 
@@ -76,8 +76,8 @@ export async function loginCustomer(req, res) {
         throw new Error("The credentials you entered are invalid");
       }
     } catch (error) {
+      res.status(400).json({ message: 'Invalid credentials' });
       console.error('Error logging in:', error);
-      res.status(500).json({ error: 'An error occurred' });
     }
   }
 
@@ -114,12 +114,12 @@ export async function loginCustomer(req, res) {
         res.status(200).json({ message: 'Reset password email sent' });
       })
       .catch((error) => {
+        res.status(400).json({ error: 'Failed to send reset password email' });
         console.error('Error sending reset password email:', error);
-        res.status(500).json({ error: 'Failed to send reset password email' });
       });
     } catch (error) {
+      res.status(400).json({ error: 'Failed to initiate password reset' });
       console.log(error)
-      res.status(500).json({ error: 'Failed to initiate password reset' });
     }
   }
   
@@ -149,8 +149,8 @@ export async function loginCustomer(req, res) {
   
       res.status(200).json({ message: 'Password updated successfully' });
     } catch (error) {
-      console.log(error);
       res.status(400).json({ error: 'Failed to update password' });
+      console.log(error);
     }
   };
 
@@ -165,8 +165,8 @@ export async function loginCustomer(req, res) {
         res.status(200).json(customers);
       }
     } catch (error) {
+      res.status(500).json({ message: "Customers not found" });
       console.error("Error getting customers:", error);
-      res.status(500).json({ error: "An error occurred" });
     }
   }
 
@@ -180,8 +180,8 @@ export async function loginCustomer(req, res) {
         res.status(200).json(customer);
       }
     } catch (error) {
+      res.status(400).json({ message: "This customer does not exist!" });
       console.error("Error getting customers:", error);
-      res.status(500).json({ error: "An error occurred" });
     }
   }
 const generateToken = (id) => {
