@@ -55,8 +55,8 @@ export async function createOrder(req, res) {
       message: "Order sent successfully",
     });
   } catch (error) {
-    console.error("Error creating order:", error);
-    res.status(500).json({ error: "An error occurred" });
+    res.status(400).json({ message: "Vendor not found" });
+    console.log("Error creating order:", error);
   }
 }
 
@@ -75,8 +75,8 @@ export async function updateOrderStatus(req, res) {
   
       res.status(200).json(updatedOrder);
     } catch (error) {
+      res.status(400).json({ message: 'Order you tries to update does not exist' });
       console.error('Error updating order status:', error);
-      res.status(500).json({ error: 'An error occurred' });
     }
   }
   
@@ -88,8 +88,8 @@ export async function getOrdersByVendor(req, res) {
   
       res.status(200).json(orders);
     } catch (error) {
+      res.status(404).json({ message: 'There are no orders to this vendor' });
       console.error('Error getting orders by vendor:', error);
-      res.status(500).json({ error: 'An error occurred' });
     }
   }
 
@@ -100,8 +100,8 @@ export async function getOrdersByVendor(req, res) {
   
       res.status(200).json(orders);
     } catch (error) {
+      res.status(400).json({ error: 'You have not placed any orders' });
       console.error('Error getting orders by customer:', error);
-      res.status(500).json({ error: 'An error occurred' });
     }
   }
 
@@ -116,8 +116,8 @@ export async function getOrdersByVendor(req, res) {
   
       res.status(200).json(order);
     } catch (error) {
+      res.status(404).json({ message: 'Order not found' });
       console.error('Error getting order by ID:', error);
-      res.status(500).json({ error: 'An error occurred' });
     }
   }
   
@@ -135,8 +135,8 @@ export async function getOrdersByVendor(req, res) {
   
       return res.json({ message: "Order deleted successfully" });
     } catch (error) {
+      res.status(400).json({ error: "The order you tried to delete does not exist" });
       console.error("Error deleting order:", error);
-      return res.status(500).json({ error: "An error occurred while deleting the order" });
     }
   }
 
