@@ -62,21 +62,21 @@ export async function updateVendor(req, res) {
     }
 
   } catch (error) {
-
+    res.status(400).json({message: "The vendor does not exist"})
     console.log("Error updating vendor: ", error);
   }
 }
 
 export async function loginVendor(req, res) {
   try {
-    const { email, password } = req.body;
+    const { name, password } = req.body;
 
-    if (!email || !password) {
+    if (!name || !password) {
       res.status(400);
       throw new Error("Please enter all the required fields");
     }
 
-    const user = await Vendor.findOne({ email });
+    const user = await Vendor.findOne({ name });
 
     if (user && (await bcrypt.compare(password, user.password))) {
       // Generate a token for the user
@@ -102,8 +102,7 @@ export async function loginVendor(req, res) {
       throw new Error("The credentials you entered are invalid");
     }
   } catch (error) {
-    console.error("Error logging in:", error);
-    res.status(500).json({ error: "An error occurred" });
+    res.status(400).json({message: "The credentials you entered are invalid."})
   }
 }
 
@@ -145,8 +144,8 @@ export const resetPassword = async (req, res) => {
         res.status(500).json({ error: "Failed to send reset password email" });
       });
   } catch (error) {
-    console.log(error);
     res.status(500).json({ error: "Failed to initiate password reset" });
+    console.log(error);
   }
 };
 
@@ -176,8 +175,8 @@ export const updatePassword = async (req, res) => {
 
     res.status(200).json({ message: "Password updated successfully" });
   } catch (error) {
-    console.log(error);
     res.status(400).json({ error: "Failed to update password" });
+    console.log(error);
   }
 };
 
@@ -191,8 +190,8 @@ export async function getVendor(req, res) {
       res.status(200).json(vendor);
     }
   } catch (error) {
+    res.status(400).json({ message: "This vendor does not exist" });
     console.error("Error getting vendors:", error);
-    res.status(500).json({ error: "An error occurred" });
   }
 }
 
@@ -202,13 +201,13 @@ export async function getVendors(req, res) {
 
     if (!vendors) {
       res.status(400);
-      throw new Error("There are no vendors in the database");
+      throw new Error("Couldn't find any vendors");
     } else {
       res.status(200).json(vendors);
     }
   } catch (error) {
-    console.error("Error getting vendors:", error);
-    res.status(500).json({ error: "An error occurred" });
+    res.status(400).json({ message: "Couldn't find any vendors" });
+    console.log("Error getting vendors:", error);
   }
 }
 
@@ -246,8 +245,8 @@ export async function addRider(req, res) {
 
     res.status(200).json({ message: "Rider added to the vendor's riders successfully" });
   } catch (error) {
+    res.status(500).json({ message: 'Rider not found!' });
     console.error('Error adding rider to vendor:', error);
-    res.status(500).json({ error: 'An error occurred' });
   }
 }
 
@@ -263,8 +262,8 @@ export async function deleteVendor(req, res) {
       res.status(200).json({ id: req.params.id, message: "Vendor deleted" });
     }
   } catch (error) {
+    res.status(400).json({ message: "Vendor not found!" });
     console.error("Error getting vendors:", error);
-    res.status(500).json({ error: "An error occurred" });
   }
 }
 
