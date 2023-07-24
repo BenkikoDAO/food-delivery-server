@@ -23,6 +23,9 @@ const vendorSchema = new mongoose.Schema(
     rating: {
       type: Number
     },
+    benkikoToken:{
+      type: String
+    },
     location: {
       type: {
         type: String,

@@ -51,10 +51,10 @@ export async function updateVendor(req, res) {
       res.status(400)
       throw new Error("The vendor does not exist!")
     } else {
-      const { paymail, publicKey, secretKey, name, phoneNumber, rating, location, openingHours, closingHours, riders } = req.body
+      const { paymail, publicKey, secretKey, benkikoToken, name, phoneNumber, rating, location, openingHours, closingHours, riders } = req.body
       const updatedVendor = await Vendor.findByIdAndUpdate(
         req.params.id, 
-        { paymail, publicKey, secretKey, name, phoneNumber, rating, location, openingHours, closingHours, riders },
+        { paymail, publicKey, secretKey, benkikoToken, name, phoneNumber, rating, location, openingHours, closingHours, riders },
          {new:true}
       )
   
