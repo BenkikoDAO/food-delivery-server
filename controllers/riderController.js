@@ -1,41 +1,76 @@
 import Rider from "../models/rider.js";
+import Vendor from "../models/vendor.js";
 import bcrypt from "bcrypt"
 import sgMail from '@sendgrid/mail'
 import jwt from 'jsonwebtoken'
+import { v2 as cloudinary } from "cloudinary";
+import multer from "multer";
+import dotenv from "dotenv";
+dotenv.config();
+
+const storage = multer.diskStorage({
+  destination: function (req, file, cb) {
+    cb(null, "uploads/");
+  },
+  filename: function (req, file, cb) {
+    cb(null, file.originalname);
+  },
+});
+
+const upload = multer({ storage });
+
+cloudinary.config({
+  cloud_name: process.env.CLOUDNAME,
+  api_key: process.env.CLOUDINARY_API_KEY,
+  api_secret: process.env.CLOUDINARY_API_SECRET,
+});
 
 const bcryptSalt = process.env.BCRYPT_SALT
 //Register customer
 export async function createRider (req, res){ 
     try {
-        const { name, email, password, phoneNumber } = req.body
+        const { vendorID, name, email, phoneNumber, availability } = req.body
+        const image = req.file;
+        const result = await cloudinary.uploader.upload(image.path, {
+          width: 500,
+          height: 500,
+          crop: "scale",
+          quality: 50,
+        });
 
+        if(!name || !email || !phoneNumber){
+          return res.status(400).json({ message: "Please enter all the required fields" });
+        }
         const existingRider = await Rider.findOne({email})
         if (existingRider) {
-            return res.status(400).json({ error: 'Email is already registered' });
+            return res.status(400).json({ error: 'Rider already exists in the system' });
         }
 
-        const hashedPassword = await bcrypt.hash(password, Number(bcryptSalt));
-
-        const newRider = new Rider({
+        const vendorExists = await Vendor.findById(vendorID);
+        if(vendorExists){
+          const newRider = new Rider({
+            vendorID,
             name,
             email,
             phoneNumber,
-            password: hashedPassword,
+            image: result.secure_url,
+            availability
           });
-      
-          // Save the customer to the database
           const savedRider = await newRider.save();
-
-        const sessionId = req.session.id;
           
           res.status(201).json({
             _id: savedRider.id,
             username: savedRider.username,
             email: savedRider.email,
             phoneNumber: savedRider.phoneNumber,
+            availability: savedRider.availability,
+            vendorID: savedRider.vendorID,
             token: generateToken(savedRider._id),
-            sessionId
+            image: savedRider.image
           });
+        } else {
+      res.status(400).json({ error: "A vendor with that ID does not exist" });
+        }
 
     } catch (error) {
         console.error('Error registering rider:', error);
@@ -58,15 +93,18 @@ export async function loginRider(req, res) {
         // Generate a token for the user
         const token = generateToken(user._id);
   
-        // Create a session for the user
-        const sessionId = req.session.id;
-  
         res.status(200).json({
           _id: user._id,
+          vendorID: user.vendorID,
           username: user.username,
           email: user.email,
           phoneNumber: user.phoneNumber,
-          token, sessionId
+          image: user.image,
+          availability: user.availability,
+          paymail: user.paymail,
+          secretKey: user.secretKey,
+          publicKey: user.publicKey,
+          token
         });
       } else {
         res.status(400);
@@ -75,6 +113,48 @@ export async function loginRider(req, res) {
     } catch (error) {
       console.error('Error logging in:', error);
       res.status(500).json({ error: 'An error occurred' });
+    }
+  }
+
+  export async function updateRider(req, res) {
+    const rider = await Rider.findById(req.params.id);
+  
+    if (!rider) {
+      return res.status(404).json({ error: "The rider you tried to update does not exist" });
+    }
+     else {
+      const { name, email, phoneNumber, availability, password, paymail, secretKey, publicKey } = req.body;
+      let image = rider.image;
+      let hashedPassword = null
+  
+      if (req.file) {
+        try {
+          // If a new image is uploaded, update it in Cloudinary
+          const result = await cloudinary.uploader.upload(req.file.path, {
+            width: 500,
+            height: 500,
+            crop: "scale",
+            quality: 60
+          });
+          image = result.secure_url;
+        } catch (error) {
+          // Handle the error, e.g., return an error response to the client
+          return res.status(500).json({ error: "Image upload failed" });
+        }
+      }
+      
+      if (password) {
+        hashedPassword = await bcrypt.hash(password, Number(bcryptSalt));
+      }
+
+  
+      const updatedRider = await Rider.findByIdAndUpdate(
+        req.params.id,
+        { name, email, phoneNumber, availability, paymail, password: hashedPassword, secretKey, publicKey, image },
+        { new: true }
+      );
+  
+      res.status(200).json(updatedRider);
     }
   }
 
@@ -166,6 +246,20 @@ export async function loginRider(req, res) {
     }
   }
 
+  export async function getRidersByVendor(req, res) {
+    try {
+      const rider = await Rider.find({ vendorID: req.params.vendorId });
+      if (!rider) {
+        res.status(400);
+        throw new Error("This vendor does not have any riders yet.");
+      } else {
+        res.status(200).json(rider);
+      }
+    } catch (error) {
+      res.status(400).json({ message: "This vendor does not have any riders yet." });
+    }
+  }
+
   export async function getRiders(req, res) {
     try {
         const riders = await Rider.find();
@@ -182,10 +276,26 @@ export async function loginRider(req, res) {
       }
   }
 
+  export async function deleteRider(req, res) {
+    try {
+      const rider = await Rider.findById(req.params.id);
+      if (!rider) {
+        res.status(404);
+        throw new Error("Rider not found ");
+      } else {
+        await Rider.findByIdAndDelete(req.params.id);
+        res.status(200).json({ id: req.params.id, message: "Rider deleted" });
+      }
+    } catch (error) {
+      res.status(400).json({ message: "Rider not found!" });
+      console.error("Error getting riders:", error);
+    }
+  }
+
 const generateToken = (id) => {
     return jwt.sign({ id }, process.env.JWT_SECRET, {
       expiresIn: "1d",
     });
   };
 
-export default { createRider, loginRider, resetPassword, updatePassword, getRider, getRiders }
+// export default { createRider, loginRider, resetPassword, updatePassword, getRider, getRiders }
