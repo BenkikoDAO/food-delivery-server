@@ -8,12 +8,19 @@ const menuSchema = new mongoose.Schema({
         type: String,
         required: true,
     },
+    vendorName: {
+        type: String
+    },
+    category: {
+        type: String,
+        required: true
+    },
     description: {
         type:String,
         required: true
     },
     price: {
-        type: Number,
+        type: String,
         required: true
     },
     image: {
