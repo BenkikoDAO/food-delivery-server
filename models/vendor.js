@@ -17,11 +17,18 @@ const vendorSchema = new mongoose.Schema(
       type: String,
       unique: true
     },
+    businessLogo: {
+      type: String
+    },
+    cuisine: {
+      type: String
+    },
     phoneNumber: {
       type: String
     },
     rating: {
-      type: Number
+      type: Number,
+      default: 0
     },
     benkikoToken:{
       type: String
@@ -35,15 +42,20 @@ const vendorSchema = new mongoose.Schema(
         type: [Number], // Array of [longitude, latitude] values
       },
     },
+    locationName: {
+      type: String
+    },
     openingHours: {
       type: String,
     },
     closingHours: {
       type: String,
     },
-    businessRegistration: {
-      data: Buffer,
-      contentType: String,
+    businessRegNo: {
+      type: String,
+    },
+    HealthCertNo: {
+      type: String
     },
     riders: [
       {
@@ -53,6 +65,12 @@ const vendorSchema = new mongoose.Schema(
         },
         name: String,
         phoneNumber: String,
+        availability: String,
+        email: String,
+        image: String,
+        paymail: String,
+        secretKey: String,
+        publicKey: String
       },
     ],
   }
