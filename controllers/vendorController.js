@@ -1,14 +1,56 @@
+import dotenv from "dotenv";
+import multer from "multer";
+import { v2 as cloudinary } from "cloudinary";
+dotenv.config();
+
 import Vendor from "../models/vendor.js";
 import Rider from "../models/rider.js";
 import bcrypt from "bcrypt";
 import sgMail from "@sendgrid/mail";
+import NodeGeocoder from "node-geocoder";
 import jwt from "jsonwebtoken";
 const bcryptSalt = process.env.BCRYPT_SALT;
+// const openCageApi = process.env.OPENCAGE_GEOCODING_API_KEY
+
+const options = {
+  provider: "opencage",
+  apiKey: process.env.OPENCAGE_GEOCODING_API_KEY,
+};
+const geocoder = NodeGeocoder(options);
+
+const storage = multer.diskStorage({
+  destination: function (req, file, cb) {
+    // Specify the destination folder for uploaded files
+    cb(null, 'uploads/');
+  },
+  filename: function (req, file, cb) {
+    // Specify the file name for uploaded files
+    cb(null, Date.now() + '-' + file.originalname);
+  },
+});
+
+// Create the multer middleware with the specified storage
+const upload = multer({ storage: storage });
+
+cloudinary.config({
+  cloud_name: process.env.CLOUDNAME,
+  api_key: process.env.CLOUDINARY_API_KEY,
+  api_secret: process.env.CLOUDINARY_API_SECRET,
+});
 
 export async function createVendor(req, res) {
   try {
-    const { name, password, phoneNumber, location, openingHours, closingHours, businessRegistration } = req.body;
-    if (!password || !name || !phoneNumber || !location || !openingHours || !closingHours) {
+    const { name, password, phoneNumber, location, openingHours, closingHours, businessRegNo, HealthCertNo, rating, cuisine} = req.body;
+    const businessLogo = req.file;
+    const result = await cloudinary.uploader.upload(businessLogo.path, {
+      width: 500,
+      height: 500,
+      crop: "scale",
+    });
+
+    const parsedLocation = JSON.parse(location)
+
+    if (!password || !name || !phoneNumber || !location || !openingHours || !closingHours || !cuisine || !businessRegNo || !HealthCertNo) {
       return res.status(400).json({ message: "Please enter all the required fields" });
     }
 
@@ -19,7 +61,25 @@ export async function createVendor(req, res) {
       return res.status(409).json({ message: "Username already in use" });
     }
 
-    const newVendor = new Vendor({ name, phoneNumber, password: hashedPassword, location, openingHours, closingHours, businessRegistration});
+    const results = await geocoder.reverse({
+      lat: parsedLocation.coordinates[0],
+      lon: parsedLocation.coordinates[1],
+    });
+
+    if (!results || results.length === 0) {
+      console.error("Error getting location");
+      return res
+        .status(500)
+        .json({ error: "An error occurred while getting the location" });
+    }
+
+    const locationName = results[0].city;
+    // console.log(results[0].city);
+
+    const newVendor = new Vendor({ name, phoneNumber, password: hashedPassword, location, locationName, openingHours, closingHours, HealthCertNo, businessRegNo, rating,
+      cuisine,
+      businessLogo: result.secure_url,
+    });
 
     // Save the customer to the database
     const savedVendor = await newVendor.save();
@@ -30,10 +90,13 @@ export async function createVendor(req, res) {
       _id: savedVendor.id,
       name: savedVendor.name,
       phoneNumber: savedVendor.phoneNumber,
+      businessLogo: savedVendor.businessLogo,
       location: savedVendor.location,
-      openingHours: savedVendor.openingHours,
-      closingHours: savedVendor.closingHours,
-      businessRegistration: savedVendor.businessRegistration,
+      locationName: savedVendor.locationName,
+      rating: savedVendor.rating,
+      cuisine: savedVendor.cuisine,
+      businessRegNo: savedVendor.businessRegNo,
+      businessRegNo: savedVendor.HealthCertNo,
       token: generateToken(savedVendor.id),
       sessionId,
     });
@@ -46,23 +109,34 @@ export async function createVendor(req, res) {
 export async function updateVendor(req, res) {
   try {
     // const { vendorId } = req.params.id
-    const vendor = await Vendor.findById(req.params.id)
-    if(!vendor){
-      res.status(400)
-      throw new Error("The vendor does not exist!")
+    const vendor = await Vendor.findById(req.params.id);
+    if (!vendor) {
+      res.status(400);
+      throw new Error("The vendor does not exist!");
     } else {
-      const { paymail, publicKey, secretKey, benkikoToken, name, phoneNumber, rating, location, openingHours, closingHours, riders } = req.body
-      const updatedVendor = await Vendor.findByIdAndUpdate(
-        req.params.id, 
-        { paymail, publicKey, secretKey, benkikoToken, name, phoneNumber, rating, location, openingHours, closingHours, riders },
-         {new:true}
-      )
-  
-      res.status(200).json(updatedVendor)
-    }
+      const {paymail, publicKey, secretKey, benkikoToken, name, businessRegNo, phoneNumber, rating, location, cuisine, openingHours, closingHours, riders} = req.body;
+      let businessLogo = vendor.businessLogo
 
+      if (req.file) {
+        // If a new image is uploaded, update it in Cloudinary
+        const result = await cloudinary.uploader.upload(req.file.path, {
+          width: 500,
+          height: 500,
+          crop: "scale",
+          quality: 60
+        });
+        businessLogo = result.secure_url
+      }
+      const updatedVendor = await Vendor.findByIdAndUpdate(
+        req.params.id,
+        {paymail, publicKey, secretKey, benkikoToken, name, phoneNumber, businessRegNo,rating, location, cuisine, businessLogo, openingHours, closingHours, riders},
+        { new: true }
+      );
+
+      res.status(200).json(updatedVendor);
+    }
   } catch (error) {
-    res.status(400).json({message: "The vendor does not exist"})
+    res.status(400).json({ message: "The vendor does not exist" });
     console.log("Error updating vendor: ", error);
   }
 }
@@ -82,9 +156,6 @@ export async function loginVendor(req, res) {
       // Generate a token for the user
       const token = generateToken(user._id);
 
-      // Get sessionID
-      const sessionId = req.session.id;
-
       res.status(200).json({
         _id: user._id,
         username: user.name,
@@ -94,15 +165,19 @@ export async function loginVendor(req, res) {
         openingHours: user.openingHours,
         closingHours: user.closingHours,
         businessRegistration: user.businessRegistration,
-        token,
-        sessionId,
+        paymail: user.paymail,
+        secretKey: user.secretKey,
+        publicKey: user.publicKey,
+        token
       });
     } else {
       res.status(400);
       throw new Error("The credentials you entered are invalid");
     }
   } catch (error) {
-    res.status(400).json({message: "The credentials you entered are invalid."})
+    res
+      .status(400)
+      .json({ message: "The credentials you entered are invalid." });
   }
 }
 
@@ -213,42 +288,130 @@ export async function getVendors(req, res) {
 
 export async function addRider(req, res) {
   try {
-    const { vendorId, riderId } = req.body;
+    const { name, email, phoneNumber, availability } = req.body;
+    const image = req.file;
+    const result = await cloudinary.uploader.upload(image.path, {
+      width: 500,
+      height: 500,
+      crop: "scale",
+      quality: 50,
+    });
 
-    const vendor = await Vendor.findById(vendorId);
+    const vendor = await Vendor.findById(req.params.id)
 
-    if (!vendor) {
-      return res.status(404).json({ error: 'Vendor not found' });
-    }
-
-    // Check if the rider is already associated with the vendor
-    const isRiderAssociated = vendor.riders.includes(riderId);
+    const isRiderAssociated = vendor.riders.some((riderInfo) => riderInfo.email === email);
 
     if (isRiderAssociated) {
-      return res.status(400).json({ error: 'Rider is already associated with this vendor' });
+      return res.status(400).json({ error: "Rider is already associated with this vendor" });
     }
 
-    const rider = await Rider.findById(riderId);
+    const newRider = await Rider.create({
+      name,
+      email,
+      phoneNumber,
+      image: result.secure_url,
+      availability,
+    });
 
-    if (!rider) {
-      return res.status(404).json({ error: 'Rider not found' });
-    }
-
-    // Add the rider details to the vendor's riders array
     const riderInfo = {
-      riderId: rider._id,
-      name: rider.name,
-      phoneNumber: rider.phoneNumber
+      riderId: newRider._id,
+      name: newRider.name,
+      phoneNumber: newRider.phoneNumber,
+      email: newRider.email,
+      image: newRider.image,
+      availability: newRider.availability,
     };
     vendor.riders.push(riderInfo);
     await vendor.save();
 
-    res.status(200).json({ message: "Rider added to the vendor's riders successfully" });
+    res.status(200).json({ message: "New rider added to the vendor's riders successfully" });
   } catch (error) {
-    res.status(500).json({ message: 'Rider not found!' });
-    console.error('Error adding rider to vendor:', error);
+    res.status(500).json({ message: "Rider not found!" });
+    console.error("Error adding rider to vendor:", error);
   }
 }
+
+export async function editRider(req, res) {
+  const { name, email, phoneNumber, availability, password, paymail, secretKey, publicKey } = req.body;
+  const { riderId, id } = req.params;
+  let image = req.file;
+  let hashedPassword = null;
+
+  try {
+    const vendor = await Vendor.findById(id);
+
+    // Find the rider in the vendor's profile
+    const riderIndex = vendor.riders.findIndex((rider) => rider.id.toString() === riderId);
+    if (riderIndex === -1) {
+      return res.status(404).json({ error: "Rider not found in vendor's profile" });
+    }
+
+    if (image) {
+      // If a new image is uploaded, update it in Cloudinary
+      const result = await cloudinary.uploader.upload(image.path, {
+        width: 500,
+        height: 500,
+        crop: "scale",
+        quality: 60
+      });
+      vendor.riders[riderIndex].image = result.secure_url;
+    }
+
+    if (password) {
+      hashedPassword = await bcrypt.hash(password, Number(bcryptSalt));
+      vendor.riders[riderIndex].password = hashedPassword;
+    }
+
+    // Check which fields are provided in the request and update only those fields
+    if (name) vendor.riders[riderIndex].name = name;
+    if (email) vendor.riders[riderIndex].email = email;
+    if (phoneNumber) vendor.riders[riderIndex].phoneNumber = phoneNumber;
+    if (availability) vendor.riders[riderIndex].availability = availability;
+    if (paymail) vendor.riders[riderIndex].paymail = paymail;
+    if (secretKey) vendor.riders[riderIndex].secretKey = secretKey;
+    if (publicKey) vendor.riders[riderIndex].publicKey = publicKey;
+
+    // Save the updated vendor document to the database
+    await vendor.save();
+
+    res.status(200).json({ message: "Rider updated successfully" });
+  } catch (error) {
+    // Handle the error, e.g., return an error response to the client
+    res.status(500).json({ error: "Error updating rider" });
+    console.error("Error updating rider:", error);
+  }
+}
+
+export async function deleteRider(req, res) {
+  try {
+    const { riderId, vendorId } = req.params;
+
+    const vendor = await Vendor.findById(vendorId);
+
+    if (!vendor) {
+      return res.status(404).json({ error: "Vendor not found" });
+    }
+
+    // Check if the vendor has the rider in their riders array
+    const riderIndex = vendor.riders.findIndex(
+      (riderInfo) => riderInfo.id.toString() === riderId
+    );
+
+    if (riderIndex === -1) {
+      return res.status(404).json({ error: "Rider not associated with this vendor" });
+    }
+
+    // Remove the rider from the vendor's riders array and save 
+    vendor.riders.splice(riderIndex, 1);
+    await vendor.save();
+
+    res.status(200).json({ message: "Rider removed from the vendor successfully" });
+  } catch (error) {
+    res.status(500).json({ message: "Error removing rider from vendor" });
+    console.error("Error removing rider from vendor:", error);
+  }
+}
+
 
 
 export async function deleteVendor(req, res) {
@@ -282,5 +445,7 @@ export default {
   getVendor,
   getVendors,
   addRider,
-  deleteVendor
+  deleteVendor,
+  editRider,
+  deleteRider
 };
