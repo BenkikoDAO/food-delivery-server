@@ -13,6 +13,9 @@ const menuSchema = new mongoose.Schema({
     },
     category: {
         type: String,
+    },
+    dishType: {
+        type: String,
         required: true
     },
     description: {
