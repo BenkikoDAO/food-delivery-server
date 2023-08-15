@@ -23,8 +23,8 @@ cloudinary.config({
 });
 export async function addMenuItem(req, res) {
   try {
-    const { vendorID, name, category, description, price } = req.body;
-    if (!vendorID || !name || !category || !description || !price) {
+    const { vendorID, name, dishType, description, price } = req.body;
+    if (!vendorID || !name || !dishType || !description || !price) {
       return res
         .status(400)
         .json({ message: "Please enter all the required fields" });
@@ -43,7 +43,7 @@ export async function addMenuItem(req, res) {
         vendorID,
         vendorName: vendorExists.name,
         name,
-        category,
+        dishType,
         description,
         price,
         image: result.secure_url,
@@ -53,7 +53,7 @@ export async function addMenuItem(req, res) {
         vendorID: menuItem.vendorID,
         vendorName: menuItem.vendorName,
         name: menuItem.name,
-        category: menuItem.category,
+        dishType: menuItem.dishType,
         description: menuItem.description,
         price: menuItem.price,
         image: menuItem.image,
@@ -111,7 +111,7 @@ export async function addMenuItem(req, res) {
       res.status(400);
       throw new Error("The menuItem you tried to update does not exist");
     } else {
-      const { name, description, category, price } = req.body;
+      const { name, description, dishType, price } = req.body;
       let image = menuItem.image;
   
       if (req.file) {
@@ -127,7 +127,7 @@ export async function addMenuItem(req, res) {
   
       const updatedmenuItem = await Menu.findByIdAndUpdate(
         req.params.id,
-        { name, description, category, price, image },
+        { name, description, dishType, price, image },
         { new: true }
       );
   
@@ -154,12 +154,12 @@ export async function getMenuItemByVendor(req, res) {
     const item = await Menu.find({ vendorID: req.params.vendorId });
     if (!item) {
       res.status(400);
-      throw new Error("There are no dished by this vendor.");
+      throw new Error("There are no dishes by this vendor.");
     } else {
       res.status(200).json(item);
     }
   } catch (error) {
-    res.status(400).json({ message: "There are no dished by this vendor." });
+    res.status(400).json({ message: "There are no dishes by this vendor." });
   }
 }
 
