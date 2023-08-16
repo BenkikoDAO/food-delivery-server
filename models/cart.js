@@ -13,6 +13,9 @@ const cartSchema = new mongoose.Schema({
     vendorName:{
         type:String
     },
+    vendorContact:{
+        type: String
+    },
     name:{
         type: String
     },
