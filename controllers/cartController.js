@@ -27,6 +27,7 @@ export async function addCartItem(req, res) {
       const item = new Cart({
         itemId: itemId,
         vendorName: cartItem.vendorName,
+        vendorContact: cartItem.vendorContact,
         customer: customer.username,
         customerId: customerId,
         name: cartItem.name,
@@ -53,6 +54,8 @@ export async function updateCart(req, res) {
     if (!cartItem) {
       res.status(400).json({ error: "Cart item does not exist" });
     }
+
+    cartItem.description += ' & ' + req.body.extraNote;
     const updatedProduct = await Cart.findByIdAndUpdate(
       req.params.id,
       req.body,
@@ -63,6 +66,29 @@ export async function updateCart(req, res) {
     res.status(400).json({ error: "An error occurred when updating cart" });
   }
 }
+
+export async function updateExtraNote(req, res) {
+  try {
+    const cartItem = await Cart.findById(req.params.id);
+    if (!cartItem) {
+      return res.status(400).json({ error: "Cart item does not exist" });
+    }
+
+    // Concatenate the extraNote to the existing description
+    cartItem.description += ' & ' + req.body.extraNote;
+
+    // Update other fields if needed
+    // cartItem.someOtherField = req.body.someOtherField;
+
+    // Save the updated cartItem
+    const updatedProduct = await cartItem.save();
+
+    res.status(200).json(updatedProduct);
+  } catch (error) {
+    res.status(400).json({ error: "An error occurred when updating cart" });
+  }
+}
+
 
 export async function getCartItems(req, res) {
   try {
