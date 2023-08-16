@@ -46,10 +46,12 @@ export async function addMenuItem(req, res) {
         dishType,
         description,
         price,
+        vendorContact: vendorExists.phoneNumber,
         image: result.secure_url,
       });
       res.status(201).json({
         _id: menuItem.id,
+        vendorContact: menuItem.vendorContact,
         vendorID: menuItem.vendorID,
         vendorName: menuItem.vendorName,
         name: menuItem.name,
