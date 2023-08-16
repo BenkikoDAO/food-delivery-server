@@ -50,7 +50,7 @@ export async function createVendor(req, res) {
 
     const parsedLocation = JSON.parse(location)
 
-    if (!password || !name || !phoneNumber || !location || !openingHours || !closingHours || !cuisine || !businessRegNo || !HealthCertNo) {
+    if (!password || !name || !phoneNumber || !location || !cuisine || !businessRegNo || !HealthCertNo) {
       return res.status(400).json({ message: "Please enter all the required fields" });
     }
 
@@ -76,8 +76,7 @@ export async function createVendor(req, res) {
     const locationName = results[0].city;
     // console.log(results[0].city);
 
-    const newVendor = new Vendor({ name, phoneNumber, password: hashedPassword, location, locationName, openingHours, closingHours, HealthCertNo, businessRegNo, rating,
-      cuisine,
+    const newVendor = new Vendor({ name, phoneNumber, password: hashedPassword, location, locationName, openingHours, closingHours, HealthCertNo, businessRegNo, rating, cuisine,
       businessLogo: result.secure_url,
     });
 
