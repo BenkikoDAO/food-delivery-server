@@ -11,6 +11,9 @@ const menuSchema = new mongoose.Schema({
     vendorName: {
         type: String
     },
+    vendorContact:{
+        type: String
+    },
     category: {
         type: String,
     },
@@ -23,7 +26,7 @@ const menuSchema = new mongoose.Schema({
         required: true
     },
     price: {
-        type: String,
+        type: Number,
         required: true
     },
     image: {
