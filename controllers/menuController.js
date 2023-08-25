@@ -3,6 +3,7 @@ import Vendor from "../models/vendor.js";
 import { v2 as cloudinary } from "cloudinary";
 import multer from "multer";
 import dotenv from "dotenv";
+import logger from "../helpers/logging.js";
 dotenv.config();
 
 const storage = multer.diskStorage({
@@ -49,6 +50,7 @@ export async function addMenuItem(req, res) {
         vendorContact: vendorExists.phoneNumber,
         image: result.secure_url,
       });
+      logger.info('Menu item added successfully by: ', vendorExists.name)
       res.status(201).json({
         _id: menuItem.id,
         vendorContact: menuItem.vendorContact,
@@ -64,6 +66,7 @@ export async function addMenuItem(req, res) {
       res.status(400).json({ error: "A vendor with that ID does not exist" });
     }
   } catch (error) {
+    logger.error('An error occured when adding menu item: ', error)
     res.status(500).json({ error: "An error occurred" });
     console.error("Error registering customer:", error);
   }
@@ -107,6 +110,7 @@ export async function addMenuItem(req, res) {
 //   }
 // }
  export async function updateMenuItem(req, res) {
+  try {
     const menuItem = await Menu.findById(req.params.id);
   
     if (!menuItem) {
@@ -132,21 +136,26 @@ export async function addMenuItem(req, res) {
         { name, description, dishType, price, image },
         { new: true }
       );
-  
+        logger.info('Menu item updated successfully')
       res.status(200).json(updatedmenuItem);
     }
+  
+  } catch (error) {
+    logger.error('An error occured when adding menu item: ', error)
+    return res.status(400)
   }
+}
 
 export async function getMenuItems(req, res) {
   try {
     const items = await Menu.find();
     if (!items) {
-      res.status(400);
-      throw new Error("There are no menu items at this time");
+      res.status(200).json({items})
     } else {
       res.status(200).json(items);
     }
   } catch (error) {
+    logger.error('There are no vendor items at this time')
     res.status(400).json({ message: "There are no menu items at this time" });
   }
 }
@@ -161,6 +170,7 @@ export async function getMenuItemByVendor(req, res) {
       res.status(200).json(item);
     }
   } catch (error) {
+    logger.error("There are no dishes by this vendor.")
     res.status(400).json({ message: "There are no dishes by this vendor." });
   }
 }
@@ -175,6 +185,7 @@ export async function getMenuItem(req, res) {
       res.status(200).json(item);
     }
   } catch (error) {
+    logger.error('Menu item does not exist')
     res.status(400).json({ message: "This menu item does not exist" });
   }
 }
@@ -187,9 +198,11 @@ export async function deleteMenuItem(req, res) {
       throw new Error("Item not found ");
     } else {
       await Menu.findByIdAndDelete(req.params.id);
+      logger.info('Menu item deleted successfully')
       res.status(200).json({ id: req.params.id, message: "Item deleted" });
     }
   } catch (error) {
+    logger.error('Item not found')
     res.status(400).json({ message: "Menu item not found" });
   }
 }

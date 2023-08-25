@@ -1,6 +1,7 @@
 import dotenv from "dotenv";
 import multer from "multer";
 import { v2 as cloudinary } from "cloudinary";
+import logger from "../helpers/logging.js";
 dotenv.config();
 
 import Vendor from "../models/vendor.js";
@@ -51,6 +52,7 @@ export async function createVendor(req, res) {
     const parsedLocation = JSON.parse(location)
 
     if (!password || !name || !phoneNumber || !location || !cuisine || !businessRegNo || !HealthCertNo) {
+      logger.error('Missing required fields for creating vendor');
       return res.status(400).json({ message: "Please enter all the required fields" });
     }
 
@@ -58,6 +60,7 @@ export async function createVendor(req, res) {
 
     const existingVendor = await Vendor.findOne({ name });
     if (existingVendor) {
+      logger.error('Vendor with the same username already exists');
       return res.status(409).json({ message: "Username already in use" });
     }
 
@@ -67,13 +70,15 @@ export async function createVendor(req, res) {
     });
 
     if (!results || results.length === 0) {
+      logger.error('Error getting location');
       console.error("Error getting location");
       return res
         .status(500)
         .json({ error: "An error occurred while getting the location" });
     }
+    // console.log(results);
 
-    const locationName = results[0].city;
+    let locationName = results[0].county
     // console.log(results[0].city);
 
     const newVendor = new Vendor({ name, phoneNumber, password: hashedPassword, location, locationName, openingHours, closingHours, HealthCertNo, businessRegNo, rating, cuisine,
@@ -82,6 +87,7 @@ export async function createVendor(req, res) {
 
     // Save the customer to the database
     const savedVendor = await newVendor.save();
+    logger.info('Vendor created successfully');
 
     const sessionId = req.session.id;
 
@@ -100,8 +106,9 @@ export async function createVendor(req, res) {
       sessionId,
     });
   } catch (error) {
+    logger.error('Error registering vendor: ', error);
     console.log("Error registering vendor:", error);
-    res.status(500).json({ error: "An error occurred" });
+    return res.status(500).json({ error: "An error occurred" });
   }
 }
 
@@ -110,11 +117,28 @@ export async function updateVendor(req, res) {
     // const { vendorId } = req.params.id
     const vendor = await Vendor.findById(req.params.id);
     if (!vendor) {
+      logger.error('The vendor does not exist')
       res.status(400);
       throw new Error("The vendor does not exist!");
     } else {
-      const {paymail, publicKey, secretKey, benkikoToken, name, businessRegNo, phoneNumber, rating, location, cuisine, openingHours, closingHours, riders} = req.body;
+      const {paymail, publicKey, secretKey, benkikoToken, name, businessRegNo, phoneNumber, rating, location, cuisine, riders} = req.body;
       let businessLogo = vendor.businessLogo
+
+      // Calculate new locationName based on the updated coordinates
+      // const parsedLocation = JSON.parse(location);
+      const reverseGeocodeResults = await geocoder.reverse({
+        lat: location.coordinates[0],
+        lon: location.coordinates[1],
+      });
+
+      let locationName; // Initialize the location name
+
+      if (reverseGeocodeResults && reverseGeocodeResults.length > 0) {
+        // Use a relevant address component as the location name
+        // You can prioritize 'suburb', 'neighborhood', 'locality', etc.
+        console.log(reverseGeocodeResults);
+        locationName = reverseGeocodeResults[0].county
+      }
 
       if (req.file) {
         // If a new image is uploaded, update it in Cloudinary
@@ -128,15 +152,17 @@ export async function updateVendor(req, res) {
       }
       const updatedVendor = await Vendor.findByIdAndUpdate(
         req.params.id,
-        {paymail, publicKey, secretKey, benkikoToken, name, phoneNumber, businessRegNo,rating, location, cuisine, businessLogo, openingHours, closingHours, riders},
+        {paymail, publicKey, secretKey, benkikoToken, name, locationName, phoneNumber, businessRegNo,rating, location, cuisine, businessLogo, riders},
         { new: true }
       );
 
+      logger.info('Vendor has been updated successfully')
       res.status(200).json(updatedVendor);
     }
   } catch (error) {
-    res.status(400).json({ message: "The vendor does not exist" });
+    logger.error('The vendor does not exist')
     console.log("Error updating vendor: ", error);
+    return res.status(400).json({ message: "The vendor does not exist" });
   }
 }
 
@@ -170,12 +196,13 @@ export async function loginVendor(req, res) {
         token
       });
     } else {
+      logger.error("Invalid login credentials")
       res.status(400);
       throw new Error("The credentials you entered are invalid");
     }
   } catch (error) {
-    res
-      .status(400)
+    logger.error('Invalid login credentials')
+    return res.status(400)
       .json({ message: "The credentials you entered are invalid." });
   }
 }
@@ -264,6 +291,7 @@ export async function getVendor(req, res) {
       res.status(200).json(vendor);
     }
   } catch (error) {
+    logger.error('Vendor with that Id does not exist')
     res.status(400).json({ message: "This vendor does not exist" });
     console.error("Error getting vendors:", error);
   }
@@ -280,6 +308,7 @@ export async function getVendors(req, res) {
       res.status(200).json(vendors);
     }
   } catch (error) {
+    logger.error('No vendors available')
     res.status(400).json({ message: "Couldn't find any vendors" });
     console.log("Error getting vendors:", error);
   }
@@ -322,9 +351,11 @@ export async function addRider(req, res) {
     };
     vendor.riders.push(riderInfo);
     await vendor.save();
+    logger.info('Rider added successfully')
 
     res.status(200).json({ message: "New rider added to the vendor's riders successfully" });
   } catch (error) {
+    logger.error('Rider you tried to add was not found: ', error)
     res.status(500).json({ message: "Rider not found!" });
     console.error("Error adding rider to vendor:", error);
   }
@@ -372,10 +403,12 @@ export async function editRider(req, res) {
 
     // Save the updated vendor document to the database
     await vendor.save();
+    logger.info('Rider updated successfully')
 
     res.status(200).json({ message: "Rider updated successfully" });
   } catch (error) {
     // Handle the error, e.g., return an error response to the client
+    logger.error('There was an error updating rider: ', error)
     res.status(500).json({ error: "Error updating rider" });
     console.error("Error updating rider:", error);
   }
@@ -403,6 +436,7 @@ export async function deleteRider(req, res) {
     // Remove the rider from the vendor's riders array and save 
     vendor.riders.splice(riderIndex, 1);
     await vendor.save();
+    logger.info(`Rider removed from vendor: ${vendor.name} successfully`)
 
     res.status(200).json({ message: "Rider removed from the vendor successfully" });
   } catch (error) {
@@ -422,8 +456,10 @@ export async function deleteVendor(req, res) {
     } else {
       await Vendor.findByIdAndDelete(req.params.id);
       res.status(200).json({ id: req.params.id, message: "Vendor deleted" });
+      logger.info(`Vendor: ${vendor.name} deleted successfully`)
     }
   } catch (error) {
+    logger.error('An error occured when deleting vendor: ', error)
     res.status(400).json({ message: "Vendor not found!" });
     console.error("Error getting vendors:", error);
   }
