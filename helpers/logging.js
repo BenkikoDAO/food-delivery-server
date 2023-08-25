@@ -17,6 +17,7 @@ const logger = createLogger({
       options: {
         useUnifiedTopology: true, // Use the new MongoDB driver
       },
+      storeHost: true //store os.hostName() value
     }),
   ],
 });
