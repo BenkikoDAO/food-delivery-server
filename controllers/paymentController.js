@@ -7,13 +7,13 @@ export async function handleCallback(req, res) {
     try {
       // Save the response data to your database (all responses, regardless of success)
       const paymentResponse = new Payment({
-        responseData: data,
+        data: data,
         timestamp: new Date(),
       });
   
       await paymentResponse.save();
 
-      logger.info("Payment response sent" - paymentResponse.responseData)
+      logger.info(`Payment response sent - ${paymentResponse.data}`)
   
       // Respond with the saved payment response data
       res.status(200).json({ message: "Callback response received", paymentResponse });
