@@ -27,6 +27,9 @@ const customerSchema = new mongoose.Schema({
           type: [Number], // Array of [longitude, latitude] values
           required: true
         }
+      },
+      fcmToken: {
+        type: String
       }
 
 }, {timestamps: true})
