@@ -7,6 +7,7 @@ import cors from 'cors';
 import session from "express-session";
 import MongoStore from "connect-mongo";
 import { connectDB } from "./config/db.js"
+import logger from "./helpers/logging.js";
 import customerRoute from './routes/customerRoute.js'
 import riderRoute from './routes/riderRoute.js'
 import vendorRoute from './routes/vendorRoute.js'
@@ -49,5 +50,7 @@ app.use(session({
 
 // Start the server
 app.listen(PORT, () => {
-  console.log(`Server running on port ${PORT}`);
+  // console.log(`Server running on port ${PORT}`);
+  logger.info(`Server running on port ${PORT}`)
+
 });
