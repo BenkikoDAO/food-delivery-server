@@ -6,6 +6,12 @@ const cartSchema = new mongoose.Schema({
     customerId: {
         type: mongoose.Schema.Types.ObjectId,
     },
+    customerContact:{
+        type: String
+    },
+    customerEmail:{
+        type: String
+    },
     itemId:{
         type: mongoose.Schema.Types.ObjectId,
         // required: true
@@ -34,6 +40,33 @@ const cartSchema = new mongoose.Schema({
     },
     extraNote:{
         type: String
+    },
+    deliveryAddress: {
+        type: {
+            type: String,
+            enum: ['Point'], // Specify the type as "Point"
+            // required: true
+          },
+          coordinates: {
+            type: [Number], // Array of [longitude, latitude] values
+            // required: true
+          }
+    },
+    streetAddress:{
+        type: String
+    },
+    deliveryDate:{
+        type: String
+    },
+    deliveryTime:{
+        type: String
+    },
+    deliveryFee:{
+        type: Number,
+        default:0
+    },
+    vendorNames:{
+        type: Array
     }
 }, {timestamps: true})
 
