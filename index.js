@@ -13,6 +13,7 @@ import vendorRoute from './routes/vendorRoute.js'
 import menuRoute from './routes/menuRoute.js'
 import orderRoute from './routes/orderRoute.js'
 import cartRoute from './routes/cartRoute.js'
+import paymentCallback from './routes/paymentRoute.js'
 
 const app = express();
 const PORT = process.env.PORT || 5000
@@ -44,6 +45,7 @@ app.use(session({
   app.use("/api/v1/menu", menuRoute)
   app.use("/api/v1/order", orderRoute)
   app.use("/api/v1/cart", cartRoute)
+  app.use("/api/v1/mpesa", paymentCallback)
 
 // Start the server
 app.listen(PORT, () => {
