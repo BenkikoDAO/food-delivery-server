@@ -19,7 +19,7 @@ export async function handleCallback(req, res) {
       res.status(200).json({ message: "Callback response received", paymentResponse });
     } catch (error) {
       // Handle errors and send an appropriate response
-      console.error("Error handling callback:", error);
+      logger.error('Error occured while handling callback: ', error)
       res.status(500).json({ message: "An error occurred while handling callback" });
     }
   }
