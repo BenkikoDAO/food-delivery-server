@@ -3,7 +3,7 @@ import logger from "../helpers/logging.js";
 
 export async function handleCallback(req, res) {
     const { data } = req.body;
-    logger.info(data)
+    logger.info(req.body)
   
     try {
       // Save the response data to your database (all responses, regardless of success)
