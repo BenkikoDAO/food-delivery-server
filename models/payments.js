@@ -1,7 +1,7 @@
 import mongoose from 'mongoose';
 const paymentSchema = new mongoose.Schema({
     data:{
-        type: String
+        type: Object
     }
 },{timestamps: true})
 
