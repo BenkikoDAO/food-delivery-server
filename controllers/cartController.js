@@ -137,7 +137,7 @@ export async function calcDeliveryFee(req, res) {
           latitude: vendor.location.coordinates[0],
           longitude: vendor.location.coordinates[1],
         };
-        console.log(vendorCoordinates);
+        // console.log(vendorCoordinates);
 
         // Calculate distance and delivery fee
         const customerCoordinates = {
@@ -156,7 +156,7 @@ export async function calcDeliveryFee(req, res) {
           },
           { latitude: vendorCoord.latitude, longitude: vendorCoord.longitude }
         );
-        console.log(distanceInMeters);
+        // console.log(distanceInMeters);
         const distanceInKilometers = distanceInMeters / 1000;
         let deliveryFee = distanceInKilometers * ratePerKilometer;
 
