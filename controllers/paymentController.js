@@ -28,13 +28,13 @@ export async function handleCallback(req, res) {
   
       const response = await Payment.findOne({ 'data.transaction_reference': transactionRef });
   
-      if (!response) {
-        logger.error(`No record found for transactionRef: ${transactionRef}`);
-        res.status(404).json({ message: 'No record found for transactionRef' });
-      } else {
+    //   if (!response) {
+    //     logger.error(`No record found for transactionRef: ${transactionRef}`);
+    //     res.status(404).json({ message: 'No record found for transactionRef' });
+    //   } else {
         const success = response.data.Success;
         res.status(200).json({ success });
-      }
+    //   }
     } catch (error) {
       logger.error(error);
       res.status(500).json({ message: 'An error occurred when fetching your response' });
