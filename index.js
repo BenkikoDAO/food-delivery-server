@@ -46,7 +46,7 @@ app.use(session({
   app.use("/api/v1/menu", menuRoute)
   app.use("/api/v1/order", orderRoute)
   app.use("/api/v1/cart", cartRoute)
-  app.use("/api/v1/mpesa", paymentCallback)
+  app.use("/api/v1/payment", paymentCallback)
 
 // Start the server
 app.listen(PORT, () => {
