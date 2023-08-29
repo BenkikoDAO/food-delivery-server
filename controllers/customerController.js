@@ -61,12 +61,17 @@ export async function loginCustomer(req, res) {
     if (user && (await bcrypt.compare(password, user.password))) {
       // Generate a token for the user
       const token = generateToken(user._id);
+      // if (user.fcmToken) {
+      //   user.fcmToken = undefined;
+      // }
 
+      // // Update the FCM token with the new one
+      // user.fcmToken = fcmToken;
+
+      // // Save the updated user document
+      // await user.save();
       // Create a session for the user
       const sessionId = req.session.id;
-      // Update the FCM token in the user's document
-      user.fcmToken = req.body.fcmToken; // Assuming you send the FCM token in the request body
-      await user.save();
 
       res.status(200).json({
         _id: user._id,
@@ -74,18 +79,18 @@ export async function loginCustomer(req, res) {
         email: user.email,
         location: user.location,
         phoneNumber: user.phoneNumber,
-        fcmToken: user.fcmToken,
+        // fcmToken: user.fcmToken,
         token,
         sessionId,
       });
     } else {
-      logger.error("Invalid login credentials");
+      logger.error("Invalid password");
       res.status(400);
       throw new Error("The credentials you entered are invalid");
     }
   } catch (error) {
     logger.error("Invalid login credentials");
-    res.status(400).json({ message: "Invalid credentials" });
+    res.status(400).json({ message: "Invalid credentials", error: error });
   }
 }
 
