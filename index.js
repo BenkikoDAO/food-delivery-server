@@ -49,8 +49,15 @@ const server = http.createServer(app);
 const wss = new WebSocketServer({ server });
 
 // Handle WebSocket connections
-wss.on('connection', (ws) => {
+wss.on('connection', (ws, req) => {
   console.log('New WebSocket connection');
+
+  // Extract the vendorId from the query parameters or headers
+  const url = new URL(req.url, 'http://localhost');
+  const vendorId = url.searchParams.get('vendorId'); // Assuming vendorId is sent as a query parameter
+
+  // Store the vendorId in the WebSocket client object
+  ws.vendorId = vendorId;
 
   ws.on('message', (message) => {
     console.log(`Received message: ${message}`);
@@ -60,6 +67,9 @@ wss.on('connection', (ws) => {
   // Send a welcome message to the connected client
   ws.send('Welcome to the WebSocket server!');
 });
+
+// Store the WebSocket server instance in the Express app
+app.set('wss', wss);
 
   app.use("/api/v1/customer-auth", customerRoute)
   app.use("/api/v1/rider-auth", riderRoute)
