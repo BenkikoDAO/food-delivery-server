@@ -1,4 +1,5 @@
 import express from "express"
+import http from 'http'
 import morgan from "morgan"
 import bodyParser from "body-parser";
 import dotenv from 'dotenv';
@@ -15,6 +16,7 @@ import menuRoute from './routes/menuRoute.js'
 import orderRoute from './routes/orderRoute.js'
 import cartRoute from './routes/cartRoute.js'
 import paymentCallback from './routes/paymentRoute.js'
+import WebSocket, {WebSocketServer} from 'ws';
 
 const app = express();
 const PORT = process.env.PORT || 5000
@@ -40,6 +42,25 @@ app.use(session({
     },
   }));
 
+  // Create an HTTP server using the Express app
+const server = http.createServer(app);
+
+// Create a WebSocket server using the HTTP server
+const wss = new WebSocketServer({ server });
+
+// Handle WebSocket connections
+wss.on('connection', (ws) => {
+  console.log('New WebSocket connection');
+
+  ws.on('message', (message) => {
+    console.log(`Received message: ${message}`);
+    // Handle incoming messages from clients, if needed
+  });
+
+  // Send a welcome message to the connected client
+  ws.send('Welcome to the WebSocket server!');
+});
+
   app.use("/api/v1/customer-auth", customerRoute)
   app.use("/api/v1/rider-auth", riderRoute)
   app.use("/api/v1/vendor-auth", vendorRoute)
@@ -49,8 +70,10 @@ app.use(session({
   app.use("/api/v1/payment", paymentCallback)
 
 // Start the server
-app.listen(PORT, () => {
-  // console.log(`Server running on port ${PORT}`);
-  logger.info(`Server running on port ${PORT}`)
-
+// app.listen(PORT, () => {
+//   // console.log(`Server running on port ${PORT}`);
+//   logger.info(`Server running on port ${PORT}`)
+// });
+server.listen(PORT, () => {
+  logger.info(`Server running on port ${PORT}`);
 });
