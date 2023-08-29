@@ -180,7 +180,13 @@ export async function loginVendor(req, res) {
     if (user && (await bcrypt.compare(password, user.password))) {
       // Generate a token for the user
       const token = generateToken(user._id);
-
+      // if (user.fcmToken) {
+      //   user.fcmToken = undefined;
+      // }
+      // Update the FCM token with the new one
+      // user.fcmToken = fcmToken;
+      // Save the updated user document
+      await user.save();
       res.status(200).json({
         _id: user._id,
         username: user.name,
