@@ -120,6 +120,26 @@ export async function deleteItem(req, res) {
   }
 }
 
+export async function clearCart(req, res){
+  try {
+    const customerId = req.params.customerId;
+
+    // Find and delete all cart items for the specified customerId
+    const result = await Cart.deleteMany({ customerId: customerId });
+
+    if (result.deletedCount === 0) {
+      res.status(400).json({ message: "No cart items found for the customer" });
+    } else {
+      res.status(200).json({ message: "Cart items deleted" });
+    }
+  } catch (error) {
+    logger.error("An error occurred when deleting cart items: ", error);
+    res
+      .status(500)
+      .json({ message: "An error occurred when deleting cart items" });
+  }
+}
+
 export async function calcDeliveryFee(req, res) {
   const { deliveryAddress, vendorNames, customerId, deliveryTime, deliveryDate, streetAddress } = req.body;
   if (!deliveryAddress || !vendorNames || !deliveryTime || ! deliveryDate || ! streetAddress || !customerId) {
