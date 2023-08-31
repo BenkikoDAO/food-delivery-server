@@ -1,5 +1,5 @@
 import dotenv from "dotenv";
-import { nanoid, customAlphabet } from "nanoid";
+import { customAlphabet } from "nanoid";
 import admin from "firebase-admin";
 import Order from "../models/order.js";
 import Vendor from "../models/vendor.js";
@@ -24,8 +24,8 @@ export async function createOrder(req, res) {
   }
   const orders = [];
   const notifications = [];
-    // Get the WebSocket server instance
-    const wss = req.app.get('wss');
+  // Get the WebSocket server instance
+  const wss = req.app.get("wss");
   for (const vendorName of vendorNames) {
     const vendor = await Vendor.findOne({ name: vendorName });
 
@@ -34,7 +34,12 @@ export async function createOrder(req, res) {
       continue; // Skip this vendor and move to the next one
     }
     const vendorCartItems = cart.filter((item) => item.vendorName === vendorName);
-    const alphabet = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
+    // Calculate the total amount for the order
+    const orderTotalAmount = vendorCartItems.reduce((total, item) => {
+      return total + item.price + item.deliveryFee;
+    }, 0);
+    const alphabet =
+      "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
     const generateNanoid = customAlphabet(alphabet, 6); // Generates IDs of length 6
     const orderNumber = generateNanoid();
 
@@ -43,6 +48,7 @@ export async function createOrder(req, res) {
       customerCart: vendorCartItems,
       vendorName: vendor.name, // Associate the vendor's name with the order
       status: "Pending",
+      totalAmount: orderTotalAmount
     });
     await order.save();
     orders.push(order);
@@ -54,16 +60,16 @@ export async function createOrder(req, res) {
     });
     await notification.save();
     notifications.push(notification);
-// Find the WebSocket connection for the vendor (if exists)
+    // Find the WebSocket connection for the vendor (if exists)
     const vendorWebSocket = Array.from(wss.clients).find((client) => {
       return client.vendorId === vendor._id.toString();
     });
     // If a WebSocket connection exists for the vendor, send the notification
     if (vendorWebSocket) {
       const notificationPayload = {
-        type: 'New order',
+        type: "New order",
         message: notificationMessage,
-        order: order
+        order: order,
       };
       vendorWebSocket.send(JSON.stringify(notificationPayload));
     }
@@ -88,9 +94,16 @@ export async function getOrdersByVendor(req, res) {
   }
 }
 
-// export async function orderNotification(req, res) {
-//   const { vendorNames, notification } = req.body;
-// }
+export async function orderNotification(req, res) {
+  try {
+    const vendorId = req.params.vendorId;
+    const notifications = await Notification.find({vendorId: vendorId})
+    res.status(200).json(notifications);
+  } catch (error) {
+    res.status(400).json({ message: "There are no notifications at this time." });
+    console.error("Error getting orders by customer:", error);
+  }
+}
 
 export async function updateOrderStatus(req, res) {
   try {
@@ -162,12 +175,12 @@ export async function deleteOrder(req, res) {
     console.error("Error deleting order:", error);
   }
 }
-export async function deleteOrders(req, res){
+export async function deleteOrders(req, res) {
   try {
     const vendorName = req.body.vendorName;
 
     // Find and delete all cart items for the specified customerId
-    const result = await Order.deleteMany({ vendorName: vendorName });
+    const result = await Order.deleteMany({vendorName: vendorName});
 
     if (result.deletedCount === 0) {
       res.status(400).json({ message: "No orders found for this vendor" });
@@ -186,6 +199,7 @@ export default {
   getOrdersByCustomer,
   getOrdersByVendor,
   updateOrderStatus,
+  orderNotification,
   deleteOrder,
-  deleteOrders
+  deleteOrders,
 };
