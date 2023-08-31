@@ -359,7 +359,30 @@ export async function addRider(req, res) {
     await vendor.save();
     logger.info('Rider added successfully')
 
-    res.status(200).json({ message: "New rider added to the vendor's riders successfully" });
+    sgMail.setApiKey(process.env.SENDGRID_APIKEY);
+    const confirmToken = jwt.sign({ riderInfo }, process.env.JWT_SECRET, {
+      expiresIn: "1h",
+    });
+    const confirmLink = `http://localhost:5173/rider?token=${confirmToken}`; 
+    const msg = {
+      to: email,
+      from: "macmunene364@gmail.com", //remember to change this to the official client side email
+      subject: "Invite to join Mobile-eats as a rider",
+      text: `You have been invited to offer food delivery services on Mobile Eat platform by ${vendor.name}.
+      Click here to create your benkiko account. ${confirmLink}`,
+    };
+    sgMail
+      .send(msg)
+      .then(() => {
+        logger.info(`Email sent successfully to ${riderInfo.email}`)
+        // res.status(200).json({ message: `Email sent successfully to ${riderInfo.email}` });
+      })
+      .catch((error) => {
+        // res.status(400).json({ error: "Failed to send email to rider" });
+        logger.error(`Failed to send email to rider - ${riderInfo.email}`, error)
+      });
+
+    res.status(200).json({ message: "New rider added to the vendor's riders successfully and email sent" });
   } catch (error) {
     logger.error('Rider you tried to add was not found: ', error)
     res.status(500).json({ message: "Rider not found!" });
