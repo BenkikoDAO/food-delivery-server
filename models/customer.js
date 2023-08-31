@@ -21,11 +21,9 @@ const customerSchema = new mongoose.Schema({
         type: {
           type: String,
           enum: ['Point'], // Specify the type as "Point"
-          required: true
         },
         coordinates: {
           type: [Number], // Array of [longitude, latitude] values
-          required: true
         }
       },
 

@@ -9,7 +9,7 @@ let bcryptSalt = process.env.BCRYPT_SALT;
 //Register customer
 export async function createCustomer(req, res) {
   try {
-    const { username, email, password, phoneNumber, location } = req.body;
+    const { username, email, password, phoneNumber } = req.body;
 
     const existingCustomer = await Customer.findOne({ email });
     if (existingCustomer) {
@@ -23,7 +23,6 @@ export async function createCustomer(req, res) {
       email,
       phoneNumber,
       password: hashedPassword,
-      location,
     });
 
     // Save the customer to the database
@@ -37,7 +36,6 @@ export async function createCustomer(req, res) {
       username: savedCustomer.username,
       email: savedCustomer.email,
       phoneNumber: savedCustomer.phoneNumber,
-      location: savedCustomer.location,
       token: generateToken(savedCustomer._id),
       sessionId,
     });
@@ -77,7 +75,6 @@ export async function loginCustomer(req, res) {
         _id: user._id,
         username: user.username,
         email: user.email,
-        location: user.location,
         phoneNumber: user.phoneNumber,
         // fcmToken: user.fcmToken,
         token,
