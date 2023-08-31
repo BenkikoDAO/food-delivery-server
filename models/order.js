@@ -14,6 +14,9 @@ const orderSchema = mongoose.Schema({
   },
   status: {
     type: String
+  },
+  totalAmount:{
+    type: Number
   }
 },{timestamps: true})
 // const menuItemSchema = mongoose.Schema({
