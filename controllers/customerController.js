@@ -27,7 +27,7 @@ export async function createCustomer(req, res) {
 
     // Save the customer to the database
     const savedCustomer = await newCustomer.save();
-    logger.info("Customer account created: ", savedCustomer.username);
+    logger.info("Customer account created: ", newCustomer.username);
 
     const sessionId = req.session.id;
 
