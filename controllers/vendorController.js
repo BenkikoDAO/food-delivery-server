@@ -214,7 +214,7 @@ export async function loginVendor(req, res) {
   }
 }
 
-export const requstResetPassword = async (req, res) => {
+export const requestResetPassword = async (req, res) => {
   const { email } = req.body;
 
   sgMail.setApiKey(process.env.SENDGRID_APIKEY);
@@ -234,7 +234,7 @@ export const requstResetPassword = async (req, res) => {
       expiresIn: "1h",
     }); // Generate the reset token
 
-    const resetLink = `https://e-commerce-munene-m/reset-password?token=${resetToken}`; //remember to change this to a client side route with the form to reset credentials
+    const resetLink = `${clientUrl}/reset-password?token=${resetToken}`; //remember to change this to a client side route with the form to reset credentials
 
     const msg = {
       to: email,
@@ -257,36 +257,34 @@ export const requstResetPassword = async (req, res) => {
   }
 };
 
-export const updatePassword = async (req, res) => {
-  const { token, newPassword } = req.body; //in the client side, extract token from the reset link url and send it in a hidden input where you set value=<TOKEN>
-
+export async function changePassword(req, res) {
+  const { email, password } = req.body;
+  if(!email || !password){
+    return res.status(400).json({ message: "Please enter all the required fields" });
+  }
+  const vendor = await Vendor.findOne({ email });
   try {
-    // Verify the token
-    const decodedToken = jwt.verify(token, process.env.JWT_SECRET);
-
-    // Extract the user ID from the decoded token
-    const userId = decodedToken.userId;
-
-    // Find the user in the database by their ID
-    const user = await Vendor.findOne({ _id: userId });
-
-    if (!user) {
-      throw new Error("User not found");
+    // Find the user by email
+    const vendor = await Vendor.findOne({ email });
+    if (!vendor) {
+      return res.status(404).json({ error: "User not found" });
     }
+    // Hash the new password
+    const hashedPassword = await bcrypt.hash(password, Number(bcryptSalt));
 
     // Update the user's password
-    const hashedPassword = await bcrypt.hash(newPassword, Number(bcryptSalt));
-    user.password = hashedPassword;
-
-    // Save the updated user in the database
-    await user.save();
-
-    res.status(200).json({ message: "Password updated successfully" });
+    await Vendor.findByIdAndUpdate(
+      vendor._id, // Assuming _id is the user's unique identifier
+      { password: hashedPassword },
+      { new: true }
+    );
+    logger.info(`${vendor.name} - changed password successfully`)
+    res.status(200).json({ message: "Password changed successfully." });
   } catch (error) {
-    res.status(400).json({ error: "Failed to update password" });
-    console.log(error);
+    logger.error(`Error changing password for vendor - ${vendor.name}`)
+    res.status(500).json({ error: "Failed to change password" });
   }
-};
+}
 
 export async function getVendor(req, res) {
   try {
@@ -501,8 +499,8 @@ const generateToken = (id) => {
 export default {
   createVendor,
   loginVendor,
-  requstResetPassword,
-  updatePassword,
+  requestResetPassword,
+  changePassword,
   updateVendor,
   getVendor,
   getVendors,
