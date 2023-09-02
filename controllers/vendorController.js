@@ -364,7 +364,7 @@ export async function addRider(req, res) {
     const confirmToken = jwt.sign({ riderInfo }, process.env.JWT_SECRET, {
       expiresIn: "1h",
     });
-    const confirmLink = `${clientUrl}/rider?token=${confirmToken}`; 
+    const confirmLink = `${clientUrl}/rider?id=${riderInfo.riderId}/?token=${confirmToken}`; 
     const msg = {
       to: email,
       from: "macmunene364@gmail.com", //remember to change this to the official client side email
