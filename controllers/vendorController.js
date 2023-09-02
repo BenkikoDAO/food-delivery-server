@@ -12,6 +12,7 @@ import NodeGeocoder from "node-geocoder";
 import jwt from "jsonwebtoken";
 const bcryptSalt = process.env.BCRYPT_SALT;
 // const openCageApi = process.env.OPENCAGE_GEOCODING_API_KEY
+const clientUrl = process.env.CLIENT_URL
 
 const options = {
   provider: "opencage",
@@ -363,13 +364,12 @@ export async function addRider(req, res) {
     const confirmToken = jwt.sign({ riderInfo }, process.env.JWT_SECRET, {
       expiresIn: "1h",
     });
-    const confirmLink = `http://localhost:5173/rider?token=${confirmToken}`; 
+    const confirmLink = `${clientUrl}/rider?token=${confirmToken}`; 
     const msg = {
       to: email,
       from: "macmunene364@gmail.com", //remember to change this to the official client side email
       subject: "Invite to join Mobile-eats as a rider",
-      text: `You have been invited to offer food delivery services on Mobile Eat platform by ${vendor.name}.
-      Click here to create your benkiko account. ${confirmLink}`,
+      text: `You have been invited to offer food delivery services on Mobile Eat platform by ${vendor.name}.\nClick the link below to create your benkiko account. /n${confirmLink}`,
     };
     sgMail
       .send(msg)
