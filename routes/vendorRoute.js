@@ -7,7 +7,7 @@ const router = express.Router()
 
 router.route("/register").post(upload.single('businessLogo'),vendorController.createVendor)
 router.route("/login").post(vendorController.loginVendor)
-router.route("/reset-password").post(vendorController.resetPassword)
+router.route("/reset-password").post(vendorController.requstResetPassword)
 router.route("/update-password").put(vendorController.updatePassword)
 router.route("/update-vendor/:id").put(vendorProtect, upload.single('businessLogo'), vendorController.updateVendor)
 router.route("/update/editRider/:id/:riderId").put(vendorProtect, upload.single('image'), vendorController.editRider)
