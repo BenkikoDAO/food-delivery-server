@@ -7,6 +7,7 @@ import { v2 as cloudinary } from "cloudinary";
 import multer from "multer";
 import dotenv from "dotenv";
 dotenv.config();
+const clientUrl = process.env.CLIENT_URL
 
 const storage = multer.diskStorage({
   destination: function (req, file, cb) {
@@ -124,30 +125,12 @@ export async function loginRider(req, res) {
     }
      else {
       const { name, email, phoneNumber, availability, password, paymail, secretKey, publicKey } = req.body;
-      let image = rider.image;
+   
       let hashedPassword = null
-  
-      if (req.file) {
-        try {
-          // If a new image is uploaded, update it in Cloudinary
-          const result = await cloudinary.uploader.upload(req.file.path, {
-            width: 500,
-            height: 500,
-            crop: "scale",
-            quality: 60
-          });
-          image = result.secure_url;
-        } catch (error) {
-          // Handle the error, e.g., return an error response to the client
-          return res.status(500).json({ error: "Image upload failed" });
-        }
-      }
       
       if (password) {
         hashedPassword = await bcrypt.hash(password, Number(bcryptSalt));
-      }
-
-  
+      }  
       const updatedRider = await Rider.findByIdAndUpdate(
         req.params.id,
         { name, email, phoneNumber, availability, paymail, password: hashedPassword, secretKey, publicKey, image },
@@ -158,7 +141,7 @@ export async function loginRider(req, res) {
     }
   }
 
-  export const resetPassword = async(req, res) => {
+  export const requestResetPassword = async(req, res) => {
     const {email} = req.body
   
     sgMail.setApiKey(process.env.SENDGRID_APIKEY);
@@ -177,12 +160,12 @@ export async function loginRider(req, res) {
   
       const resetToken = jwt.sign({ userId }, process.env.JWT_SECRET, { expiresIn: '1h' }); // Generate the reset token
   
-      const resetLink = `https://e-commerce-munene-m/reset-password?token=${resetToken}`;//remember to change this to a client side route with the form to reset credentials
+      const resetLink = `${clientUrl}/reset-password?token=${resetToken}`;
   
       const msg = {
         to: email,
         from: 'macmunene364@gmail.com',//remember to change this to the official client side email
-        subject: 'Reset Your Password',
+        subject: 'Password reset for Mobile eats account',
         text: `Click the following link to reset your password: ${resetLink}`,
       };
       sgMail
@@ -211,7 +194,7 @@ export async function loginRider(req, res) {
       const userId = decodedToken.userId;
   
       // Find the user in the database by their ID
-      const user = await Customer.findOne({ _id: userId });
+      const user = await Rider.findOne({ _id: userId });
   
       if (!user) {
         throw new Error('User not found');
@@ -248,13 +231,10 @@ export async function loginRider(req, res) {
 
   export async function getRidersByVendor(req, res) {
     try {
-      const rider = await Rider.find({ vendorID: req.params.vendorId });
-      if (!rider) {
-        res.status(400);
-        throw new Error("This vendor does not have any riders yet.");
-      } else {
-        res.status(200).json(rider);
-      }
+      const riders = await Rider.find({ vendorID: req.params.vendorId });
+
+      res.status(200).json(riders);
+      
     } catch (error) {
       res.status(400).json({ message: "This vendor does not have any riders yet." });
     }
