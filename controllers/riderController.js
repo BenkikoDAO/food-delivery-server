@@ -133,7 +133,7 @@ export async function loginRider(req, res) {
       }  
       const updatedRider = await Rider.findByIdAndUpdate(
         req.params.id,
-        { name, email, phoneNumber, availability, paymail, password: hashedPassword, secretKey, publicKey, image },
+        { name, email, phoneNumber, availability, paymail, password: hashedPassword, secretKey, publicKey },
         { new: true }
       );
   
