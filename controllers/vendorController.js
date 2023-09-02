@@ -214,7 +214,7 @@ export async function loginVendor(req, res) {
   }
 }
 
-export const resetPassword = async (req, res) => {
+export const requstResetPassword = async (req, res) => {
   const { email } = req.body;
 
   sgMail.setApiKey(process.env.SENDGRID_APIKEY);
@@ -239,7 +239,7 @@ export const resetPassword = async (req, res) => {
     const msg = {
       to: email,
       from: "macmunene364@gmail.com", //remember to change this to the official client side email
-      subject: "Reset Your Password",
+      subject: "Password reset for Mobile eats account",
       text: `Click the following link to reset your password: ${resetLink}`,
     };
     sgMail
@@ -369,7 +369,7 @@ export async function addRider(req, res) {
       to: email,
       from: "macmunene364@gmail.com", //remember to change this to the official client side email
       subject: "Invite to join Mobile-eats as a rider",
-      text: `You have been invited to offer food delivery services on Mobile Eat platform by ${vendor.name}.\nClick the link below to create your benkiko account. /n${confirmLink}`,
+      text: `You have been invited to offer food delivery services on Mobile Eats platform by ${vendor.name}.\nClick the link below to complete your account creation. /n${confirmLink}`,
     };
     sgMail
       .send(msg)
@@ -474,8 +474,6 @@ export async function deleteRider(req, res) {
   }
 }
 
-
-
 export async function deleteVendor(req, res) {
   try {
     const vendor = await Vendor.findById(req.params.id);
@@ -503,7 +501,7 @@ const generateToken = (id) => {
 export default {
   createVendor,
   loginVendor,
-  resetPassword,
+  requstResetPassword,
   updatePassword,
   updateVendor,
   getVendor,
