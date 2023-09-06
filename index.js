@@ -53,7 +53,7 @@ wss.on('connection', (ws, req) => {
   console.log('New WebSocket connection');
 
   // Extract the vendorId from the query parameters or headers
-  const url = new URL(req.url, 'http://localhost');
+  const url = new URL(req.url, 'https://mobile-eats.onrender.com');
   const vendorId = url.searchParams.get('vendorId'); // Assuming vendorId is sent as a query parameter
 
   // Store the vendorId in the WebSocket client object
