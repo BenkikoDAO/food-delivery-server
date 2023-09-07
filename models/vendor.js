@@ -33,6 +33,9 @@ const vendorSchema = new mongoose.Schema(
     benkikoToken:{
       type: String
     },
+    specialties:{
+      type:Array
+    },
     location: {
       type: {
         type: String,
