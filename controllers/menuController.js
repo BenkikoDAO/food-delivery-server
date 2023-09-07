@@ -195,17 +195,32 @@ export async function deleteMenuItem(req, res) {
     const item = await Menu.findById(req.params.id);
     if (!item) {
       res.status(404);
-      throw new Error("Item not found ");
-    } else {
-      await Menu.findByIdAndDelete(req.params.id);
-      logger.info('Menu item deleted successfully')
-      res.status(200).json({ id: req.params.id, message: "Item deleted" });
+      throw new Error("Item not found");
     }
+
+    const vendor = await Vendor.findById(item.vendorID);
+    if (!vendor) {
+      res.status(404);
+      throw new Error("Vendor not found");
+    }
+
+    // Remove the item name from the specialties array
+    vendor.specialties = vendor.specialties.filter(dish => dish !== item.name);
+
+    // Save the updated vendor object
+    await vendor.save();
+
+    // Delete the menu item
+    await Menu.findByIdAndDelete(req.params.id);
+
+    logger.info('Menu item deleted successfully');
+    res.status(200).json({ id: req.params.id, message: "Item deleted" });
   } catch (error) {
-    logger.error('Item not found')
+    logger.error('Item not found');
     res.status(400).json({ message: "Menu item not found" });
   }
 }
+
 
 export default {
   addMenuItem,
