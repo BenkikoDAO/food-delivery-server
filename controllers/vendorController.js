@@ -122,7 +122,7 @@ export async function updateVendor(req, res) {
       res.status(400);
       throw new Error("The vendor does not exist!");
     } else {
-      const {paymail, publicKey, secretKey, benkikoToken, name, businessRegNo, phoneNumber, rating, location, cuisine, riders} = req.body;
+      const {paymail, publicKey, secretKey, specialties, benkikoToken, name, businessRegNo, phoneNumber, rating, location, cuisine, riders} = req.body;
       let businessLogo = vendor.businessLogo
 
       // Calculate new locationName based on the updated coordinates
@@ -153,7 +153,7 @@ export async function updateVendor(req, res) {
       }
       const updatedVendor = await Vendor.findByIdAndUpdate(
         req.params.id,
-        {paymail, publicKey, secretKey, benkikoToken, name, locationName, phoneNumber, businessRegNo,rating, location, cuisine, businessLogo, riders},
+        {paymail, publicKey, secretKey, benkikoToken, specialties, name, locationName, phoneNumber, businessRegNo,rating, location, cuisine, businessLogo, riders},
         { new: true }
       );
 
