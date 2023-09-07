@@ -142,6 +142,18 @@ export async function updateVendor(req, res) {
           locationName = reverseGeocodeResults[0].county
         }
       }
+      if(req.body.itemName){
+        const dish = req.body.itemName; // Get the name to add from the request
+
+        if (specialties.includes(dish)) {
+          // Name is empty or already in specialties, do nothing
+          res.status(400).json({ message: "Dish already in specialties." });
+          return;
+        }
+  
+        // Add the new name to specialties
+        specialties.push(dish);
+      }
 
       if (req.file) {
         // If a new image is uploaded, update it in Cloudinary
