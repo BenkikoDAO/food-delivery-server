@@ -166,7 +166,7 @@ export async function updateVendor(req, res) {
       }
       const updatedVendor = await Vendor.findByIdAndUpdate(
         req.params.id,
-        {paymail, publicKey, secretKey, benkikoToken, specialties, name, locationName, phoneNumber, businessRegNo,rating, location, cuisine, businessLogo, riders},
+        {paymail, publicKey, secretKey, benkikoToken, specialties: vendor.specialties, name, locationName, phoneNumber, businessRegNo,rating, location, cuisine, businessLogo, riders},
         { new: true }
       );
 
@@ -174,7 +174,7 @@ export async function updateVendor(req, res) {
       res.status(200).json(updatedVendor);
     }
   } catch (error) {
-    logger.error('The vendor does not exist')
+    logger.error(error)
     console.log("Error updating vendor: ", error);
     return res.status(400).json({ message: "The vendor does not exist" });
   }
