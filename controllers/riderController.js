@@ -164,7 +164,7 @@ export async function loginRider(req, res) {
   
       const msg = {
         to: email,
-        from: 'macmunene364@gmail.com',//remember to change this to the official client side email
+        from: 'Mobileeatbyosumo@gmail.com',//remember to change this to the official client side email
         subject: 'Password reset for Mobile eats account',
         text: `Click the following link to reset your password: ${resetLink}`,
       };

@@ -238,7 +238,7 @@ export const requestResetPassword = async (req, res) => {
 
     const msg = {
       to: email,
-      from: "macmunene364@gmail.com", //remember to change this to the official client side email
+      from: "Mobileeatbyosumo@gmail.com", //remember to change this to the official client side email
       subject: "Password reset for Mobile eats account",
       text: `Click the following link to reset your password: ${resetLink}`,
     };
@@ -365,7 +365,7 @@ export async function addRider(req, res) {
     const confirmLink = `${clientUrl}/rider/${newRider._id}/${confirmToken}`; 
     const msg = {
       to: email,
-      from: "macmunene364@gmail.com", //remember to change this to the official client side email
+      from: "Mobileeatbyosumo@gmail.com", //remember to change this to the official client side email
       subject: "Invite to join Mobile-eats as a rider",
       text: `You have been invited to offer food delivery services on Mobile Eats platform by ${vendor.name}.\nClick the link below to complete your account creation. \n${confirmLink}\n\n This link expires in an hour`,
     };
