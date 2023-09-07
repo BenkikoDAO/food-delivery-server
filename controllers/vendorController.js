@@ -127,14 +127,13 @@ export async function updateVendor(req, res) {
 
       // Calculate new locationName based on the updated coordinates
       // const parsedLocation = JSON.parse(location);
+      let locationName; // Initialize the location name
       if(location){
         const reverseGeocodeResults = await geocoder.reverse({
           lat: location.coordinates[0],
           lon: location.coordinates[1],
         });
-  
-        let locationName; // Initialize the location name
-  
+    
         if (reverseGeocodeResults && reverseGeocodeResults.length > 0) {
           // Use a relevant address component as the location name
           // You can prioritize 'suburb', 'neighborhood', 'locality', etc.
