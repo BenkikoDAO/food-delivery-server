@@ -4,6 +4,7 @@ import Menu from "../models/menu.js";
 import Customer from "../models/customer.js";
 import Vendor from "../models/vendor.js";
 import logger from "../helpers/logging.js";
+import redisClient from "../helpers/redisClient.js";
 
 export async function addCartItem(req, res) {
   try {
@@ -58,26 +59,32 @@ export async function addCartItem(req, res) {
 }
 export async function updateCart(req, res) {
   try {
-    const cartItem = await Cart.findById(req.params.id);
+    const cartItemId = req.params.id;
+    const redisKey = `cartItems:${cartItemId}`;
+
+    const cartItem = await Cart.findById(cartItemId);
     if (!cartItem) {
       res.status(400).json({ error: "Cart item does not exist" });
+      return; // Exit the function early if the cart item is not found
     }
 
+    // Update the cart item data
     cartItem.description += " & " + req.body.extraNote;
-    const updatedProduct = await Cart.findByIdAndUpdate(
-      req.params.id,
-      req.body,
-      { new: true }
-    );
-    res.status(200).json(updatedProduct);
+    const updatedCartItem = await Cart.findByIdAndUpdate(cartItemId, req.body, { new: true });
+
+    // Update the item in the Redis cache
+    await redisClient.set(redisKey, JSON.stringify(updatedCartItem));
+
+    res.status(200).json(updatedCartItem);
   } catch (error) {
-    logger.error("An error occured when updating cart", error);
     res.status(400).json({ error: "An error occurred when updating cart" });
   }
 }
 export async function updateExtraNote(req, res) {
   try {
-    const cartItem = await Cart.findById(req.params.id);
+    const cartItemId = req.params.id;
+    const redisKey = `cartItems:${cartItemId}`;
+    const cartItem = await Cart.findById(cartItemId);
     if (!cartItem) {
       return res.status(400).json({ error: "Cart item does not exist" });
     }
@@ -85,6 +92,7 @@ export async function updateExtraNote(req, res) {
     cartItem.description += " & " + req.body.extraNote;
     const updatedProduct = await cartItem.save();
     logger.info("Extra note added successfully");
+    await redisClient.set(redisKey, JSON.stringify(updatedProduct))
 
     res.status(200).json(updatedProduct);
   } catch (error) {
@@ -95,25 +103,50 @@ export async function updateExtraNote(req, res) {
 export async function getCartItems(req, res) {
   try {
     const customerId = req.params.id;
-    const cartItems = await Cart.find({ customerId: customerId });
+    const redisKey = `cartItems:${customerId}`;
 
-    res.status(200).json(cartItems);
+    // Attempt to retrieve cart items from Redis
+    const cachedData = await redisClient.get(redisKey);
+
+    if (cachedData) {
+      // Cart items found in cache, send them as a response
+      res.status(200).json(JSON.parse(cachedData));
+    } else {
+      // Cart items not found in cache, fetch them from the database
+      const cartItems = await Cart.find({ customerId: customerId });
+
+      if (!cartItems || cartItems.length === 0) {
+        res.status(400);
+        throw new Error("Cart is empty");
+      } else {
+        // Cache the fetched cart items in Redis for future use
+        await redisClient.setEx(redisKey, 3600, JSON.stringify(cartItems)); // Cache for 1 hour (adjust as needed)
+
+        res.status(200).json(cartItems);
+      }
+    }
   } catch (error) {
-    logger.error("Cannot get cart items for this customer", error);
+    // logger.error("Cannot get cart items for this customer", error);
     res.status(400).json({ message: "Cart is empty" });
   }
 }
 export async function deleteItem(req, res) {
   try {
     const itemId = req.params.id;
+    const redisKey = `cartItems:${itemId}`;
+
     const item = await Cart.findById(itemId);
     if (!item) {
       res.status(400).json("Item not found");
+      return; // Exit the function early if item not found
     }
-    await Cart.findByIdAndDelete(req.params.id);
+    await Cart.findByIdAndDelete(itemId);
+
+    // Remove the deleted item from the cache
+    await redisClient.del(redisKey);
+
     res.status(200).json({ message: "Item deleted" });
   } catch (error) {
-    logger.error("An error occurred when deleting the cart item: ", error);
     res
       .status(400)
       .json({ message: "An error occurred when deleting the cart item" });
