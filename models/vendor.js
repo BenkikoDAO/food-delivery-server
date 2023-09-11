@@ -36,14 +36,11 @@ const vendorSchema = new mongoose.Schema(
     specialties:{
       type:Array
     },
-    location: {
-      type: {
-        type: String,
-        enum: ["Point"], // Specify the type as "Point"
-      },
-      coordinates: {
-        type: [Number], // Array of [longitude, latitude] values
-      },
+    latitude:{
+      type: Number
+    },
+    longitude:{
+      type: Number
     },
     locationName: {
       type: String

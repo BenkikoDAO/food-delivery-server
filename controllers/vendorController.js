@@ -2,6 +2,7 @@ import dotenv from "dotenv";
 import multer from "multer";
 import { v2 as cloudinary } from "cloudinary";
 import logger from "../helpers/logging.js";
+import redisClient from "../helpers/redisClient.js";
 dotenv.config();
 
 import Vendor from "../models/vendor.js";
@@ -42,7 +43,7 @@ cloudinary.config({
 
 export async function createVendor(req, res) {
   try {
-    const { name, password, phoneNumber, location, openingHours, closingHours, businessRegNo, HealthCertNo, rating, cuisine} = req.body;
+    const { name, password, phoneNumber, locationName, longitude, latitude, businessRegNo, HealthCertNo, rating, cuisine} = req.body;
     const businessLogo = req.file;
     const result = await cloudinary.uploader.upload(businessLogo.path, {
       width: 500,
@@ -50,9 +51,9 @@ export async function createVendor(req, res) {
       crop: "scale",
     });
 
-    const parsedLocation = JSON.parse(location)
+    // const parsedLocation = JSON.parse(location)
 
-    if (!password || !name || !phoneNumber || !location || !cuisine || !businessRegNo || !HealthCertNo) {
+    if (!password || !name || !phoneNumber || !latitude || !longitude || !cuisine || !businessRegNo || !HealthCertNo) {
       logger.error('Missing required fields for creating vendor');
       return res.status(400).json({ message: "Please enter all the required fields" });
     }
@@ -65,24 +66,24 @@ export async function createVendor(req, res) {
       return res.status(409).json({ message: "Username already in use" });
     }
 
-    const results = await geocoder.reverse({
-      lat: parsedLocation.coordinates[0],
-      lon: parsedLocation.coordinates[1],
-    });
+    // const results = await geocoder.reverse({
+    //   lat: parsedLocation.coordinates[0],
+    //   lon: parsedLocation.coordinates[1],
+    // });
 
-    if (!results || results.length === 0) {
-      logger.error('Error getting location');
-      console.error("Error getting location");
-      return res
-        .status(500)
-        .json({ error: "An error occurred while getting the location" });
-    }
+    // if (!results || results.length === 0) {
+    //   logger.error('Error getting location');
+    //   console.error("Error getting location");
+    //   return res
+    //     .status(500)
+    //     .json({ error: "An error occurred while getting the location" });
+    // }
     // console.log(results);
 
-    let locationName = results[0].county
+    // let locationName = results[0].county
     // console.log(results[0].city);
 
-    const newVendor = new Vendor({ name, phoneNumber, password: hashedPassword, location: parsedLocation, locationName, openingHours, closingHours, HealthCertNo, businessRegNo, rating, cuisine,
+    const newVendor = new Vendor({ name, phoneNumber, password: hashedPassword, latitude, longitude, locationName, HealthCertNo, businessRegNo, rating, cuisine,
       businessLogo: result.secure_url,
     });
 
@@ -97,7 +98,8 @@ export async function createVendor(req, res) {
       name: savedVendor.name,
       phoneNumber: savedVendor.phoneNumber,
       businessLogo: savedVendor.businessLogo,
-      location: savedVendor.location,
+      latitude: savedVendor.latitude,
+      longitude: savedVendor.longitude,
       locationName: savedVendor.locationName,
       rating: savedVendor.rating,
       cuisine: savedVendor.cuisine,
@@ -301,34 +303,61 @@ export async function changePassword(req, res) {
 
 export async function getVendor(req, res) {
   try {
-    const vendor = await Vendor.findById(req.params.id);
-    if (!vendor) {
-      res.status(400);
-      throw new Error("This vendor does not exist");
+    const vendorId = req.params.id;
+    const redisKey = `vendor:${vendorId}`;
+
+    // Attempt to retrieve data from Redis
+    const cachedData = await redisClient.get(redisKey);
+
+    if (cachedData) {
+      // Data found in cache, send it as a response
+      res.status(200).json(JSON.parse(cachedData));
     } else {
-      res.status(200).json(vendor);
+      // Data not found in cache, fetch it from the database
+      const vendor = await Vendor.findById(vendorId);
+
+      if (!vendor) {
+        res.status(400);
+        throw new Error("This vendor does not exist");
+      } else {
+        // Cache the fetched data in Redis for future use
+        await redisClient.setEx(redisKey, 3600, JSON.stringify(vendor)); // Cache for 1 hour (adjust as needed)
+
+        res.status(200).json(vendor);
+      }
     }
   } catch (error) {
-    logger.error('Vendor with that Id does not exist')
     res.status(400).json({ message: "This vendor does not exist" });
-    console.error("Error getting vendors:", error);
   }
 }
 
 export async function getVendors(req, res) {
   try {
-    const vendors = await Vendor.find();
+    const redisKey = "vendors";
 
-    if (!vendors) {
-      res.status(400);
-      throw new Error("Couldn't find any vendors");
+    // Attempt to retrieve data from Redis
+    const cachedData = await redisClient.get(redisKey);
+
+    if (cachedData) {
+      // Data found in cache, send it as a response
+      res.status(200).json(JSON.parse(cachedData));
     } else {
-      res.status(200).json(vendors);
+      // Data not found in cache, fetch it from the database
+      const vendors = await Vendor.find();
+
+      if (!vendors || vendors.length === 0) {
+        res.status(400);
+        throw new Error("Couldn't find any vendors");
+      } else {
+        // Cache the fetched data in Redis for future use
+        await redisClient.setEx(redisKey, 3600, JSON.stringify(vendors)); // Cache for 1 hour (adjust as needed)
+
+        res.status(200).json(vendors);
+      }
     }
   } catch (error) {
-    logger.error('No vendors available')
     res.status(400).json({ message: "Couldn't find any vendors" });
-    console.log("Error getting vendors:", error);
+    console.error("Error getting vendors:", error);
   }
 }
 
@@ -487,14 +516,20 @@ export async function deleteRider(req, res) {
 
 export async function deleteVendor(req, res) {
   try {
-    const vendor = await Vendor.findById(req.params.id);
+    const vendorId = req.params.id;
+    const redisKey = `vendor:${vendorId}`;
+
+    const vendor = await Vendor.findById(vendorId);
     if (!vendor) {
       res.status(404);
       throw new Error("Vendor not found ");
     } else {
-      await Vendor.findByIdAndDelete(req.params.id);
-      res.status(200).json({ id: req.params.id, message: "Vendor deleted" });
-      logger.info(`Vendor: ${vendor.name} deleted successfully`)
+      await Vendor.findByIdAndDelete(vendorId);
+      // Remove the vendor data from the cache
+      redisClient.del(redisKey);
+
+      res.status(200).json({ id: vendorId, message: "Vendor deleted" });
+      logger.info(`Vendor: ${vendor.name} deleted successfully`);
     }
   } catch (error) {
     logger.error('An error occured when deleting vendor: ', error)
