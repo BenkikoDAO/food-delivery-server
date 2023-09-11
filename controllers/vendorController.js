@@ -98,32 +98,17 @@ export async function createVendor(req, res) {
 
 export async function updateVendor(req, res) {
   try {
-    // const { vendorId } = req.params.id
-    const vendor = await Vendor.findById(req.params.id);
+    const vendorId = req.params.id;
+    const redisKey = `vendor:${vendorId}`;
+    const vendor = await Vendor.findById(vendorId);
     if (!vendor) {
       logger.error('The vendor does not exist')
       res.status(400);
       throw new Error("The vendor does not exist!");
     } else {
-      const {paymail, publicKey, secretKey, specialties, benkikoToken, name, businessRegNo, phoneNumber, rating, location, cuisine, riders} = req.body;
+      const {paymail, publicKey, secretKey, benkikoToken, name, businessRegNo, phoneNumber, rating, locationName, latitude, longitude, cuisine, riders} = req.body;
       let businessLogo = vendor.businessLogo
 
-      // Calculate new locationName based on the updated coordinates
-      // const parsedLocation = JSON.parse(location);
-      let locationName; // Initialize the location name
-      if(location){
-        const reverseGeocodeResults = await geocoder.reverse({
-          lat: location.coordinates[0],
-          lon: location.coordinates[1],
-        });
-    
-        if (reverseGeocodeResults && reverseGeocodeResults.length > 0) {
-          // Use a relevant address component as the location name
-          // You can prioritize 'suburb', 'neighborhood', 'locality', etc.
-          console.log(reverseGeocodeResults);
-          locationName = reverseGeocodeResults[0].county
-        }
-      }
       if(req.body.itemName){
         const dish = req.body.itemName; // Get the name to add from the request
 
@@ -149,9 +134,10 @@ export async function updateVendor(req, res) {
       }
       const updatedVendor = await Vendor.findByIdAndUpdate(
         req.params.id,
-        {paymail, publicKey, secretKey, benkikoToken, specialties: vendor.specialties, name, locationName, phoneNumber, businessRegNo,rating, location, cuisine, businessLogo, riders},
+        {paymail, publicKey, secretKey, benkikoToken, specialties: vendor.specialties, name, locationName, latitude, longitude, phoneNumber, businessRegNo,rating, location, cuisine, businessLogo, riders},
         { new: true }
       );
+      await redisClient.setEx(redisKey, 3600, JSON.stringify(updatedVendor)); // Cache for 1 hour (adjust as needed)
 
       logger.info('Vendor has been updated successfully')
       res.status(200).json(updatedVendor);
