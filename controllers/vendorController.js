@@ -51,8 +51,6 @@ export async function createVendor(req, res) {
       crop: "scale",
     });
 
-    // const parsedLocation = JSON.parse(location)
-
     if (!password || !name || !phoneNumber || !latitude || !longitude || !cuisine || !businessRegNo || !HealthCertNo) {
       logger.error('Missing required fields for creating vendor');
       return res.status(400).json({ message: "Please enter all the required fields" });
@@ -65,23 +63,6 @@ export async function createVendor(req, res) {
       logger.error('Vendor with the same username already exists');
       return res.status(409).json({ message: "Username already in use" });
     }
-
-    // const results = await geocoder.reverse({
-    //   lat: parsedLocation.coordinates[0],
-    //   lon: parsedLocation.coordinates[1],
-    // });
-
-    // if (!results || results.length === 0) {
-    //   logger.error('Error getting location');
-    //   console.error("Error getting location");
-    //   return res
-    //     .status(500)
-    //     .json({ error: "An error occurred while getting the location" });
-    // }
-    // console.log(results);
-
-    // let locationName = results[0].county
-    // console.log(results[0].city);
 
     const newVendor = new Vendor({ name, phoneNumber, password: hashedPassword, latitude, longitude, locationName, HealthCertNo, businessRegNo, rating, cuisine,
       businessLogo: result.secure_url,
