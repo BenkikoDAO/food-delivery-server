@@ -17,10 +17,14 @@ import orderRoute from './routes/orderRoute.js'
 import cartRoute from './routes/cartRoute.js'
 import paymentCallback from './routes/paymentRoute.js'
 import WebSocket, {WebSocketServer} from 'ws';
+import {redisDisconnect, redisConnect} from "./helpers/redisClient.js";
 
 const app = express();
 const PORT = process.env.PORT || 5000
 dotenv.config()
+redisConnect().then(() => {
+  logger.info('Redis connected');
+});
 // Middleware setup
 app.use(morgan('dev'));
 connectDB()
@@ -86,4 +90,15 @@ app.set('wss', wss);
 // });
 server.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`)
+});
+
+process.on('SIGINT', async () => {
+  logger.info('Shutting down...');
+
+  // Close any other resources or servers here
+  // Disconnect from Redis
+  await redisDisconnect();
+
+  logger.info('Goodbye!');
+  process.exit(0);
 });
