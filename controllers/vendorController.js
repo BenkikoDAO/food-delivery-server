@@ -71,6 +71,8 @@ export async function createVendor(req, res) {
     // Save the customer to the database
     const savedVendor = await newVendor.save();
     logger.info('Vendor created successfully');
+    const redisKey = `vendor:${savedVendor._id}`;
+    await redisClient.setEx(redisKey, 3600, JSON.stringify(savedVendor)); // Cache for 1 hour (adjust as needed)
 
     const sessionId = req.session.id;
 
