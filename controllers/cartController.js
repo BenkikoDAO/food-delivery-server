@@ -154,8 +154,8 @@ export async function calcDeliveryFee(req, res) {
       const vendor = await Vendor.findOne({ name: vendorName });
       if (vendor) {
         vendorCoordinates[vendorName] = {
-          latitude: vendor.location.coordinates[0],
-          longitude: vendor.location.coordinates[1],
+          latitude: vendor.latitude,
+          longitude: vendor.longitude,
         };
         // console.log(vendorCoordinates);
 
@@ -166,7 +166,7 @@ export async function calcDeliveryFee(req, res) {
           longitude: deliveryAddress.coordinates[0],
         };
 
-        const ratePerKilometer = 60; // Rate in shillings per kilometer
+        const ratePerKilometer = 22; // Rate in shillings per kilometer
 
         const vendorCoord = vendorCoordinates[vendorName];
         const distanceInMeters = geolib.getDistance(
@@ -181,8 +181,8 @@ export async function calcDeliveryFee(req, res) {
         let deliveryFee = distanceInKilometers * ratePerKilometer;
 
         // Ensure the minimum delivery fee is 60 shillings
-        if (deliveryFee < 60) {
-          deliveryFee = 60;
+        if (deliveryFee < 22) {
+          deliveryFee = 22;
         }
         const roundedDeliveryFee = Math.round(deliveryFee / 5) * 5;
         // Store the delivery fee for each vendor
