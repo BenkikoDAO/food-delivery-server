@@ -103,15 +103,15 @@ export async function updateExtraNote(req, res) {
 export async function getCartItems(req, res) {
   try {
     const customerId = req.params.id;
-    const redisKey = `cartItems:${customerId}`;
+    // const redisKey = `cartItems:${customerId}`;
 
-    // Attempt to retrieve cart items from Redis
-    const cachedData = await redisClient.get(redisKey);
+    // // Attempt to retrieve cart items from Redis
+    // const cachedData = await redisClient.get(redisKey);
 
-    if (cachedData) {
-      // Cart items found in cache, send them as a response
-      res.status(200).json(JSON.parse(cachedData));
-    } else {
+    // if (cachedData) {
+    //   // Cart items found in cache, send them as a response
+    //   res.status(200).json(JSON.parse(cachedData));
+    // } else {
       // Cart items not found in cache, fetch them from the database
       const cartItems = await Cart.find({ customerId: customerId });
 
@@ -120,11 +120,11 @@ export async function getCartItems(req, res) {
         throw new Error("Cart is empty");
       } else {
         // Cache the fetched cart items in Redis for future use
-        await redisClient.setEx(redisKey, 3600, JSON.stringify(cartItems)); // Cache for 1 hour (adjust as needed)
+        // await redisClient.setEx(redisKey, 3600, JSON.stringify(cartItems)); // Cache for 1 hour (adjust as needed)
 
         res.status(200).json(cartItems);
       }
-    }
+    // }
   } catch (error) {
     // logger.error("Cannot get cart items for this customer", error);
     res.status(400).json({ message: "Cart is empty" });
