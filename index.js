@@ -50,7 +50,7 @@ app.use(session({
 const server = http.createServer(app);
 
 // Create a WebSocket server using the HTTP server
-const wss = new WebSocketServer({ server });
+const wss = new WebSocket.Server({ server });
 
 // Handle WebSocket connections
 wss.on('connection', (ws, req) => {
