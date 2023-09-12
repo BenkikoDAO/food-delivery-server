@@ -174,8 +174,8 @@ export async function clearCart(req, res){
 }
 
 export async function calcDeliveryFee(req, res) {
-  const { deliveryAddress, vendorNames, customerId, deliveryTime, deliveryDate, streetAddress } = req.body;
-  if (!deliveryAddress || !vendorNames || !deliveryTime || ! deliveryDate || ! streetAddress || !customerId) {
+  const { longitude, latitude, vendorNames, customerId, deliveryTime, deliveryDate, streetAddress, street } = req.body;
+  if (!latitude || !longitude || !vendorNames || !deliveryTime || ! deliveryDate || ! streetAddress || !customerId || !street) {
     logger.error('Enter all required fields to calculate fee')
     return res.status(400).json('Enter all the required fields!');
   }
@@ -195,8 +195,8 @@ export async function calcDeliveryFee(req, res) {
         // Calculate distance and delivery fee
         const customerCoordinates = {
           // mapbox returns the coordinates in this order
-          latitude: deliveryAddress.coordinates[1],
-          longitude: deliveryAddress.coordinates[0],
+          latitude: latitude,
+          longitude: longitude,
         };
 
         const ratePerKilometer = 22; // Rate in shillings per kilometer
@@ -232,7 +232,9 @@ export async function calcDeliveryFee(req, res) {
         cartItem.deliveryTime = deliveryTime;
         cartItem.deliveryDate = deliveryDate;
         cartItem.streetAddress = streetAddress;
-        cartItem.deliveryAddress = deliveryAddress
+        cartItem.longitude = longitude,
+        cartItem.latitude = latitude,
+        cartItem.street = street
         await cartItem.save();
       }
       // console.log(cartItem);
