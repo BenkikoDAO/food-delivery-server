@@ -1,73 +1,85 @@
-import mongoose from 'mongoose';
-const cartSchema = new mongoose.Schema({
+import mongoose from "mongoose";
+const cartSchema = new mongoose.Schema(
+  {
     customer: {
-        type: String
+      type: String,
     },
     customerId: {
-        type: mongoose.Schema.Types.ObjectId,
+      type: mongoose.Schema.Types.ObjectId,
     },
-    customerContact:{
-        type: String
+    customerContact: {
+      type: String,
     },
-    customerEmail:{
-        type: String
+    customerEmail: {
+      type: String,
     },
-    itemId:{
-        type: mongoose.Schema.Types.ObjectId,
-        // required: true
+    itemId: {
+      type: mongoose.Schema.Types.ObjectId,
+      // required: true
     },
-    vendorName:{
-        type:String
+    vendorName: {
+      type: String,
     },
-    vendorContact:{
-        type: String
+    vendorContact: {
+      type: String,
     },
-    name:{
-        type: String
+    name: {
+      type: String,
     },
-    description:{
-        type: String
+    description: {
+      type: String,
     },
-    quantity:{
-        type: Number,
-        default: 1
+    quantity: {
+      type: Number,
+      default: 1,
     },
-    price:{
-        type: Number,
+    price: {
+      type: Number,
     },
-    image:{
-        type: String
+    image: {
+      type: String,
     },
-    extraNote:{
-        type: String
+    extraNote: {
+      type: String,
     },
     deliveryAddress: {
-        type: {
-            type: String,
-            enum: ['Point'], // Specify the type as "Point"
-            // required: true
-          },
-          coordinates: {
-            type: [Number], // Array of [longitude, latitude] values
-            // required: true
-          }
+      type: {
+        type: String,
+        enum: ["Point"], // Specify the type as "Point"
+        // required: true
+      },
+      coordinates: {
+        type: [Number], // Array of [longitude, latitude] values
+        // required: true
+      },
     },
-    streetAddress:{
-        type: String
+    streetAddress: {
+      type: String,
     },
-    deliveryDate:{
-        type: String
+    street: {
+      type: String,
     },
-    deliveryTime:{
-        type: String
+    latitude: {
+      type: Number,
     },
-    deliveryFee:{
-        type: Number,
-        default:0
+    longitude: {
+      type: Number,
     },
-    vendorNames:{
-        type: Array
-    }
-}, {timestamps: true})
+    deliveryDate: {
+      type: String,
+    },
+    deliveryTime: {
+      type: String,
+    },
+    deliveryFee: {
+      type: Number,
+      default: 0,
+    },
+    vendorNames: {
+      type: Array,
+    },
+  },
+  { timestamps: true }
+);
 
-export default mongoose.model("eatsCart", cartSchema)
+export default mongoose.model("eatsCart", cartSchema);
