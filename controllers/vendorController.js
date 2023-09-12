@@ -136,7 +136,7 @@ export async function updateVendor(req, res) {
       }
       const updatedVendor = await Vendor.findByIdAndUpdate(
         req.params.id,
-        {paymail, publicKey, secretKey, benkikoToken, specialties: vendor.specialties, name, locationName, latitude, longitude, phoneNumber, businessRegNo,rating, location, cuisine, businessLogo, riders},
+        {paymail, publicKey, secretKey, benkikoToken, specialties: vendor.specialties, name, locationName, latitude, longitude, phoneNumber, businessRegNo,rating, cuisine, businessLogo, riders},
         { new: true }
       );
       await redisClient.setEx(redisKey, 3600, JSON.stringify(updatedVendor)); // Cache for 1 hour (adjust as needed)
