@@ -131,7 +131,7 @@ export async function updateOrderStatus(req, res) {
 export async function getOrdersByCustomer(req, res) {
   try {
     const customerId = req.params.customerId;
-    const orders = await Order.find({ customerID: customerId });
+    const orders = await Order.find({ customerId: customerId });
 
     res.status(200).json(orders);
   } catch (error) {
