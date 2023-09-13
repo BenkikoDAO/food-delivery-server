@@ -45,11 +45,8 @@ const vendorSchema = new mongoose.Schema(
     locationName: {
       type: String
     },
-    openingHours: {
-      type: String,
-    },
-    closingHours: {
-      type: String,
+    fcmToken:{
+      type: String
     },
     businessRegNo: {
       type: String,

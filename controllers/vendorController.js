@@ -43,7 +43,7 @@ cloudinary.config({
 
 export async function createVendor(req, res) {
   try {
-    const { name, password, phoneNumber, locationName, longitude, latitude, businessRegNo, HealthCertNo, rating, cuisine} = req.body;
+    const { name, password, phoneNumber, locationName, longitude, latitude, fcmToken, businessRegNo, HealthCertNo, rating, cuisine} = req.body;
     const businessLogo = req.file;
     const result = await cloudinary.uploader.upload(businessLogo.path, {
       width: 500,
@@ -64,7 +64,7 @@ export async function createVendor(req, res) {
       return res.status(409).json({ message: "Username already in use" });
     }
 
-    const newVendor = new Vendor({ name, phoneNumber, password: hashedPassword, latitude, longitude, locationName, HealthCertNo, businessRegNo, rating, cuisine,
+    const newVendor = new Vendor({ name, phoneNumber, password: hashedPassword, fcmToken, latitude, longitude, locationName, HealthCertNo, businessRegNo, rating, cuisine,
       businessLogo: result.secure_url,
     });
 
@@ -90,6 +90,7 @@ export async function createVendor(req, res) {
       businessRegNo: savedVendor.HealthCertNo,
       token: generateToken(savedVendor.id),
       sessionId,
+      fcmToken: savedVendor.fcmToken
     });
   } catch (error) {
     logger.error('Error registering vendor: ', error);
@@ -153,7 +154,7 @@ export async function updateVendor(req, res) {
 
 export async function loginVendor(req, res) {
   try {
-    const { name, password } = req.body;
+    const { name, password, fcmToken } = req.body;
 
     if (!name || !password) {
       res.status(400);
@@ -165,11 +166,11 @@ export async function loginVendor(req, res) {
     if (user && (await bcrypt.compare(password, user.password))) {
       // Generate a token for the user
       const token = generateToken(user._id);
-      // if (user.fcmToken) {
-      //   user.fcmToken = undefined;
-      // }
+      if (user.fcmToken) {
+        user.fcmToken = undefined;
+      }
       // Update the FCM token with the new one
-      // user.fcmToken = fcmToken;
+      user.fcmToken = fcmToken;
       // Save the updated user document
       await user.save();
       res.status(200).json({
@@ -184,7 +185,8 @@ export async function loginVendor(req, res) {
         paymail: user.paymail,
         secretKey: user.secretKey,
         publicKey: user.publicKey,
-        token
+        token,
+        fcmToken: user.fcmToken
       });
     } else {
       logger.error("Invalid login credentials")
