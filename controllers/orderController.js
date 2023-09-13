@@ -45,6 +45,7 @@ export async function createOrder(req, res) {
 
     const order = new Order({
       orderNumber: orderNumber,
+      customerId: customerId,
       customerCart: vendorCartItems,
       vendorName: vendor.name, // Associate the vendor's name with the order
       status: "Pending",
