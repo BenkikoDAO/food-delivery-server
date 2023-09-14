@@ -20,7 +20,7 @@ import WebSocket, {WebSocketServer} from 'ws';
 import {redisDisconnect, redisConnect} from "./helpers/redisClient.js";
 
 const app = express();
-const PORT = process.env.PORT || 5000
+const PORT = process.env.PORT || 8000
 dotenv.config()
 redisConnect().then(() => {
   logger.info('Redis connected');
@@ -57,8 +57,9 @@ wss.on('connection', (ws, req) => {
   console.log('New WebSocket connection');
 
   // Extract the vendorId from the query parameters or headers
-  const url = new URL(req.url, 'https://mobile-eats.onrender.com');
-  const vendorId = url.searchParams.get('vendorId'); // Assuming vendorId is sent as a query parameter
+  // const url = new URL(req.url, 'https://mobile-eats.onrender.com');
+  const queryString = ws.url.split('?')[1];
+  const vendorId = new URLSearchParams(queryString).get('vendorId')// Assuming vendorId is sent as a query parameter
 
   // Store the vendorId in the WebSocket client object
   ws.vendorId = vendorId;
