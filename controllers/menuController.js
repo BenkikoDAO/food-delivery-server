@@ -149,7 +149,7 @@ export async function addMenuItem(req, res) {
 export async function getMenuItems(req, res) {
   try {
     const items = await Menu.find();
-    res.status(200).json({items})
+    res.status(200).json(items)
     
   } catch (error) {
     logger.error('There are no vendor items at this time')
