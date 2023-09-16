@@ -67,7 +67,12 @@ const vendorSchema = new mongoose.Schema(
         image: String,
         paymail: String,
         secretKey: String,
-        publicKey: String
+        publicKey: String,
+        address: String,
+        latitude: Number,
+        longitude: Number,
+        licensePlate: String,
+        licenseExpiry: String
       },
     ],
   }

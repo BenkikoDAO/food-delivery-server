@@ -375,7 +375,7 @@ export async function addRider(req, res) {
     const confirmToken = jwt.sign({ riderInfo }, process.env.JWT_SECRET, {
       expiresIn: "1h",
     });
-    const confirmLink = `${clientUrl}/rider/${newRider._id}/${confirmToken}`; 
+    const confirmLink = `${clientUrl}/rider/${newRider._id}/${confirmToken}/${vendor._id}`; 
     const msg = {
       to: email,
       from: "Mobileeatbyosumo@gmail.com", //remember to change this to the official client side email
@@ -402,7 +402,7 @@ export async function addRider(req, res) {
 }
 
 export async function editRider(req, res) {
-  const { name, email, phoneNumber, availability, password, paymail, secretKey, publicKey } = req.body;
+  const { name, email, phoneNumber, availability, password, paymail, secretKey, publicKey, address,latitude,longitude, licenseExpiry, licensePlate } = req.body;
   const { riderId, id } = req.params;
   let image = req.file;
   let hashedPassword = null;
@@ -440,6 +440,11 @@ export async function editRider(req, res) {
     if (paymail) vendor.riders[riderIndex].paymail = paymail;
     if (secretKey) vendor.riders[riderIndex].secretKey = secretKey;
     if (publicKey) vendor.riders[riderIndex].publicKey = publicKey;
+    if(address) vendor.riders[riderIndex].address = address;;
+    if(latitude) vendor.riders[riderIndex].latitude = latitude;
+    if(longitude) vendor.riders[riderIndex].longitude = longitude;
+    if(licenseExpiry) vendor.riders[riderIndex].licenseExpiry = licenseExpiry;
+    if(licensePlate) vendor.riders[riderIndex].licensePlate = licensePlate;
 
     // Save the updated vendor document to the database
     await vendor.save();
