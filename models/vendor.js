@@ -72,7 +72,8 @@ const vendorSchema = new mongoose.Schema(
         latitude: Number,
         longitude: Number,
         licensePlate: String,
-        licenseExpiry: String
+        licenseExpiry: String,
+        id_image: String
       },
     ],
   }
