@@ -9,7 +9,7 @@ import Vendor from "../models/vendor.js";
 import Rider from "../models/rider.js";
 import bcrypt from "bcrypt";
 import sgMail from "@sendgrid/mail";
-import NodeGeocoder from "node-geocoder";
+// import NodeGeocoder from "node-geocoder";
 import jwt from "jsonwebtoken";
 const bcryptSalt = process.env.BCRYPT_SALT;
 // const openCageApi = process.env.OPENCAGE_GEOCODING_API_KEY
@@ -19,7 +19,7 @@ const options = {
   provider: "opencage",
   apiKey: process.env.OPENCAGE_GEOCODING_API_KEY,
 };
-const geocoder = NodeGeocoder(options);
+// const geocoder = NodeGeocoder(options);
 
 const storage = multer.diskStorage({
   destination: function (req, file, cb) {
@@ -404,27 +404,31 @@ export async function addRider(req, res) {
 export async function editRider(req, res) {
   const { name, email, phoneNumber, availability, password, paymail, secretKey, publicKey, address,latitude,longitude, licenseExpiry, licensePlate } = req.body;
   const { riderId, id } = req.params;
-  let image = req.file;
+  // let image = req.file;
   let hashedPassword = null;
 
   try {
     const vendor = await Vendor.findById(id);
 
     // Find the rider in the vendor's profile
-    const riderIndex = vendor.riders.findIndex((rider) => rider.id.toString() === riderId);
+    const riderIndex = vendor.riders.findIndex((rider) => rider.riderId.toString() === riderId);
     if (riderIndex === -1) {
       return res.status(404).json({ error: "Rider not found in vendor's profile" });
     }
 
-    if (image) {
+    if (req.file) {
       // If a new image is uploaded, update it in Cloudinary
-      const result = await cloudinary.uploader.upload(image.path, {
+      const result = await cloudinary.uploader.upload(req.file.path, {
         width: 500,
         height: 500,
         crop: "scale",
         quality: 60
       });
-      vendor.riders[riderIndex].image = result.secure_url;
+      if(req.file.fieldName === "image"){
+        vendor.riders[riderIndex].image = result.secure_url;
+      } else if(req.file.fieldName === "id_image"){
+        vendor.riders[riderIndex].id_image = result.secure_url
+      }
     }
 
     if (password) {
@@ -446,6 +450,9 @@ export async function editRider(req, res) {
     if(licenseExpiry) vendor.riders[riderIndex].licenseExpiry = licenseExpiry;
     if(licensePlate) vendor.riders[riderIndex].licensePlate = licensePlate;
 
+    if(password, address, latitude, longitude,licenseExpiry, licensePlate ){
+      await Rider.findByIdAndUpdate(riderId, {password: hashedPassword, address, latitude, longitude,licenseExpiry, licensePlate}, {new: true})
+    }
     // Save the updated vendor document to the database
     await vendor.save();
     logger.info('Rider updated successfully')
