@@ -103,7 +103,7 @@ export async function loginRider(req, res) {
       res.status(200).json({
         _id: user._id,
         vendorID: user.vendorID,
-        username: user.username,
+        username: user.name,
         email: user.email,
         phoneNumber: user.phoneNumber,
         image: user.image,
@@ -111,6 +111,9 @@ export async function loginRider(req, res) {
         paymail: user.paymail,
         secretKey: user.secretKey,
         publicKey: user.publicKey,
+        address: user.address,
+        licensePlate: user.licensePlate,
+        licenseExpiry: user.licenseExpiry,
         token,
       });
     } else {
