@@ -404,7 +404,8 @@ export async function addRider(req, res) {
 export async function editRider(req, res) {
   const { name, email, phoneNumber, availability, password, paymail, secretKey, publicKey, address,latitude,longitude, licenseExpiry, licensePlate } = req.body;
   const { riderId, id } = req.params;
-  // let image = req.file;
+  let image;
+  let id_image;
   let hashedPassword = null;
 
   try {
@@ -415,25 +416,47 @@ export async function editRider(req, res) {
     if (riderIndex === -1) {
       return res.status(404).json({ error: "Rider not found in vendor's profile" });
     }
-
-    if (req.file) {
-      // If a new image is uploaded, update it in Cloudinary
-      const result = await cloudinary.uploader.upload(req.file.path, {
+    if(req.files["image"]){
+      const result = await cloudinary.uploader.upload(req.files['image'][0].path, {
         width: 500,
         height: 500,
-        crop: "scale",
+        crop: 'scale',
         quality: 60
-      });
-      if(req.file.fieldName === "image"){
-        vendor.riders[riderIndex].image = result.secure_url;
-      } else if(req.file.fieldName === "id_image"){
-        vendor.riders[riderIndex].id_image = result.secure_url
-      }
+      })
+      image = result.secure_url
     }
+    if(req.files["id_image"]){
+      const result = await cloudinary.uploader.upload(req.files['id_image'][0].path, {
+        width: 500,
+        height: 500,
+        crop: 'scale',
+        quality: 60
+      })
+      id_image = result.secure_url
+    }
+
+    // if (req.file) {
+    //   // If a new image is uploaded, update it in Cloudinary
+    //   const result = await cloudinary.uploader.upload(req.file.path, {
+    //     width: 500,
+    //     height: 500,
+    //     crop: "scale",
+    //     quality: 60
+    //   });
+    //   if(req.file.fieldName === "image"){
+    //     vendor.riders[riderIndex].image = result.secure_url;
+    //     await Rider.findByIdAndUpdate(riderId, {image: result.secure_url},{new:true})
+    //   } else if(req.file.fieldName === "id_image"){
+    //     vendor.riders[riderIndex].id_image = result.secure_url
+    //     await Rider.findByIdAndUpdate(riderId, {id_image: result.secure_url}, {new:true})
+
+    //   }
+    // }
 
     if (password) {
       hashedPassword = await bcrypt.hash(password, Number(bcryptSalt));
       vendor.riders[riderIndex].password = hashedPassword;
+      await Rider.findByIdAndUpdate(riderId,{password: hashedPassword},{new:true})
     }
 
     // Check which fields are provided in the request and update only those fields
@@ -449,10 +472,13 @@ export async function editRider(req, res) {
     if(longitude) vendor.riders[riderIndex].longitude = longitude;
     if(licenseExpiry) vendor.riders[riderIndex].licenseExpiry = licenseExpiry;
     if(licensePlate) vendor.riders[riderIndex].licensePlate = licensePlate;
+    if(image) vendor.riders[riderIndex].image = image
+    if(id_image) vendor.riders[riderIndex].id_image = id_image
 
-    if(password, address, latitude, longitude,licenseExpiry, licensePlate ){
-      await Rider.findByIdAndUpdate(riderId, {password: hashedPassword, address, latitude, longitude,licenseExpiry, licensePlate}, {new: true})
-    }
+
+    // if(password, address, latitude, longitude,licenseExpiry, licensePlate, image, id_image){
+      await Rider.findByIdAndUpdate(riderId, {address, latitude, longitude,licenseExpiry, licensePlate, image, id_image}, {new: true})
+    // }
     // Save the updated vendor document to the database
     await vendor.save();
     logger.info('Rider updated successfully')
