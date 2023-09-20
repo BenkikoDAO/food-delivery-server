@@ -32,6 +32,21 @@ const riderSchema = new mongoose.Schema({
   secretKey: {
     type: String
   },
+  address:{
+    type:String
+  },
+  latitude:{
+    type: Number
+  },
+  longitude: {
+    type: Number
+  },
+  licenseExpiry:{
+    type: String
+  },
+  licensePlate:{
+    type: String
+  }
 });
 
 export default mongoose.model("Rider", riderSchema);
