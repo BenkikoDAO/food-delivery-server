@@ -145,26 +145,54 @@ export async function updateRider(req, res) {
       paymail,
       secretKey,
       publicKey,
+      address,
+      longitude,
+      latitude,
+      licenseExpiry,
+      licensePlate,
     } = req.body;
 
     let hashedPassword = null;
+    let id_image = rider.id_image
 
     if (password) {
       hashedPassword = await bcrypt.hash(password, Number(bcryptSalt));
     }
+    if (req.file) {
+      // If a new image is uploaded, update it in Cloudinary
+      const result = await cloudinary.uploader.upload(req.file.path, {
+        width: 500,
+        height: 500,
+        crop: "scale",
+        quality: 60
+      });
+      id_image = result.secure_url
+    }
     const updatedRider = await Rider.findByIdAndUpdate(
       req.params.id,
-      {
-        name,
-        email,
-        phoneNumber,
-        availability,
-        paymail,
-        password: hashedPassword,
-        secretKey,
-        publicKey,
-      },
+      { name, email, phoneNumber, availability, paymail, password: hashedPassword, secretKey, publicKey,address,longitude,latitude,licenseExpiry,licensePlate,id_image},
       { new: true }
+    );
+    await Vendor.updateMany(
+      { "riders.riderId": riderId },
+      {
+        $set: {
+          "riders.$[rider].name": name,
+          "riders.$[rider].email": email,
+          "riders.$[rider].phoneNumber": phoneNumber,
+          "riders.$[rider].address": address,
+          "riders.$[rider].licensePlate": licensePlate,
+          "riders.$[rider].licenseExpiry": licenseExpiry,
+          "riders.$[rider].longitude": longitude,
+          "riders.$[rider].latitude": latitude,
+          "riders.$[rider].paymail": paymail,
+          "riders.$[rider].id-image": id_image,
+          
+        },
+      },
+      {
+        arrayFilters: [{ "rider.riderId": riderId }],
+      }
     );
     await redisClient.setEx(redisKey, 3600, JSON.stringify(updatedRider));
 
@@ -296,7 +324,9 @@ export async function getRidersByVendor(req, res) {
       }
     }
   } catch (error) {
-    res.status(400).json({ message: "This vendor does not have any riders yet." });
+    res
+      .status(400)
+      .json({ message: "This vendor does not have any riders yet." });
   }
 }
 
@@ -328,7 +358,7 @@ export async function deleteRider(req, res) {
     } else {
       await Rider.findByIdAndDelete(req.params.id);
       redisClient.del(redisKey);
-      
+
       res.status(200).json({ id: req.params.id, message: "Rider deleted" });
     }
   } catch (error) {
