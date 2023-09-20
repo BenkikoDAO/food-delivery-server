@@ -46,6 +46,9 @@ const riderSchema = new mongoose.Schema({
   },
   licensePlate:{
     type: String
+  },
+  id_image:{
+    type: String
   }
 });
 
