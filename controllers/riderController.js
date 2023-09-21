@@ -152,25 +152,34 @@ export async function updateRider(req, res) {
       licensePlate,
     } = req.body;
 
-    let hashedPassword = null;
+    let hashedPassword;
     let id_image = rider.id_image
+    let image = rider.image
 
     if (password) {
       hashedPassword = await bcrypt.hash(password, Number(bcryptSalt));
-    }
-    if (req.file) {
-      // If a new image is uploaded, update it in Cloudinary
-      const result = await cloudinary.uploader.upload(req.file.path, {
+    } else
+    if(req.files["image"]){
+      const result = await cloudinary.uploader.upload(req.files['image'][0].path, {
         width: 500,
         height: 500,
-        crop: "scale",
+        crop: 'scale',
         quality: 60
-      });
+      })
+      image = result.secure_url
+    }
+    if(req.files["id_image"]){
+      const result = await cloudinary.uploader.upload(req.files['id_image'][0].path, {
+        width: 500,
+        height: 500,
+        crop: 'scale',
+        quality: 60
+      })
       id_image = result.secure_url
     }
     const updatedRider = await Rider.findByIdAndUpdate(
       req.params.id,
-      { name, email, phoneNumber, availability, paymail, password: hashedPassword, secretKey, publicKey,address,longitude,latitude,licenseExpiry,licensePlate,id_image},
+      { name, email, phoneNumber, availability, paymail, password: hashedPassword, secretKey, publicKey,address,longitude,latitude,licenseExpiry,licensePlate,id_image, image},
       { new: true }
     );
     await Vendor.updateMany(
