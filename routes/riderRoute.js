@@ -6,7 +6,7 @@ const router = express.Router()
 
 router.route("/register").post(upload.single('image'), createRider)
 router.route("/login").post(loginRider)
-router.route("/update/:id").put(updateRider)
+router.route("/update/:id").put(upload.fields([{ name: "image" }, { name: "id_image" }]),updateRider)
 router.route("/reset-password-request").post(requestResetPassword)
 router.route('/reset-password').post(changePassword)
 router.route("/").get(getRiders)
