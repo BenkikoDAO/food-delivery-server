@@ -483,7 +483,7 @@ export async function editRider(req, res) {
     await vendor.save();
     logger.info('Rider updated successfully')
 
-    res.status(200).json({ message: "Rider updated successfully" });
+    res.status(200).json({ message: "Rider updated successfully", rider: vendor.riders[riderIndex] });
   } catch (error) {
     // Handle the error, e.g., return an error response to the client
     logger.error('There was an error updating rider: ', error)
