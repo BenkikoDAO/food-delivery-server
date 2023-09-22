@@ -17,6 +17,12 @@ const orderSchema = mongoose.Schema({
   },
   totalAmount:{
     type: Number
+  },
+  riderId:{
+    type: mongoose.Schema.Types.ObjectId,
+  },
+  riderName:{
+    type: String
   }
 },{timestamps: true})
 // const menuItemSchema = mongoose.Schema({
