@@ -1,6 +1,8 @@
 import Rider from "../models/rider.js";
 import Vendor from "../models/vendor.js";
+import Order from "../models/order.js"
 import bcrypt from "bcrypt";
+import logger from "../helpers/logging.js";
 import sgMail from "@sendgrid/mail";
 import jwt from "jsonwebtoken";
 import { v2 as cloudinary } from "cloudinary";
@@ -150,6 +152,7 @@ export async function updateRider(req, res) {
       latitude,
       licenseExpiry,
       licensePlate,
+      orderId
     } = req.body;
 
     let hashedPassword;
@@ -158,7 +161,7 @@ export async function updateRider(req, res) {
 
     if (password) {
       hashedPassword = await bcrypt.hash(password, Number(bcryptSalt));
-    } else
+    }
     if(req.files["image"]){
       const result = await cloudinary.uploader.upload(req.files['image'][0].path, {
         width: 500,
@@ -176,6 +179,29 @@ export async function updateRider(req, res) {
         quality: 60
       })
       id_image = result.secure_url
+    }
+    if(orderId){
+      try {
+        const order = await Order.findById(orderId);
+    
+        if (!order) {
+          throw new Error("Order does not exist");
+        } 
+        const existingOrder = rider.order.find((riderOrder) =>
+          riderOrder._id.equals(order._id)
+        );
+    
+        if (!existingOrder) {
+          rider.order.push(order);
+        } else {
+          // Handle the case where the order already exists in the array
+          // You can throw an error, log a message, or perform any desired action
+          logger.info("Order already exists in the rider's order array");
+        }
+        await rider.save()
+      } catch (error) {
+        logger.info("Error finding order");
+      }
     }
     const updatedRider = await Rider.findByIdAndUpdate(
       req.params.id,
@@ -320,7 +346,7 @@ export async function getRidersByVendor(req, res) {
       res.status(200).json(JSON.parse(cachedData));
     } else {
       // Riders not found in cache, fetch them from the database
-      const riders = await Rider.find({ vendorID: vendorId });
+      const riders = await Rider.find({ vendorId: vendorId });
 
       if (!riders || riders.length === 0) {
         res.status(400);
