@@ -109,14 +109,21 @@ export async function orderNotification(req, res) {
 export async function updateOrderStatus(req, res) {
   try {
     const orderId = req.params.id;
-    const { status } = req.body;
+    const { status, riderId, riderName } = req.body;
     const order = await Order.findById(orderId);
 
     if (!order) {
       return res.status(404).json({ error: "Order not found" });
     }
+    if(status){
+      order.status = status;
+    }
 
-    order.status = status;
+    if(riderId && riderName){
+      order.riderId = riderId
+      order.riderName = riderName
+    }
+
     const updatedOrder = await order.save();
 
     res.status(200).json(updatedOrder);
