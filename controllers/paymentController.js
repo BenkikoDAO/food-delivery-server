@@ -40,3 +40,22 @@ export async function handleCallback(req, res) {
       res.status(500).json({ message: 'An error occurred when fetching your response' });
     }
   }
+
+  export async function getPayoutResponse(req, res) {
+    try {
+      const { payoutRef } = req.body;
+  
+      const response = await Payment.findOne({ 'data.payout_reference': payoutRef });
+  
+    //   if (!response) {
+    //     logger.error(`No record found for transactionRef: ${transactionRef}`);
+    //     res.status(404).json({ message: 'No record found for transactionRef' });
+    //   } else {
+        const success = response.data.success;
+        res.status(200).json({ success, response: response.data });
+    //   }
+    } catch (error) {
+      logger.error(error);
+      res.status(500).json({ message: 'An error occurred when fetching your response' });
+    }
+  }

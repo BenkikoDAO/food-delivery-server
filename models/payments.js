@@ -5,6 +5,9 @@ const paymentSchema = new mongoose.Schema({
     },
     transactionRef: {
         type: String
+    },
+    payoutRef:{
+        type: String
     }
 },{timestamps: true})
 
