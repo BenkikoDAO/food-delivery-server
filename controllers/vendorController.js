@@ -13,7 +13,7 @@ import sgMail from "@sendgrid/mail";
 import jwt from "jsonwebtoken";
 const bcryptSalt = process.env.BCRYPT_SALT;
 // const openCageApi = process.env.OPENCAGE_GEOCODING_API_KEY
-const clientUrl = process.env.CLIENT_URL
+const clientUrl = process.env.CLIENT_URL;
 
 const options = {
   provider: "opencage",
@@ -24,11 +24,11 @@ const options = {
 const storage = multer.diskStorage({
   destination: function (req, file, cb) {
     // Specify the destination folder for uploaded files
-    cb(null, 'uploads/');
+    cb(null, "uploads/");
   },
   filename: function (req, file, cb) {
     // Specify the file name for uploaded files
-    cb(null, Date.now() + '-' + file.originalname);
+    cb(null, Date.now() + "-" + file.originalname);
   },
 });
 
@@ -43,7 +43,19 @@ cloudinary.config({
 
 export async function createVendor(req, res) {
   try {
-    const { name, password, phoneNumber, locationName, longitude, latitude, fcmToken, businessRegNo, HealthCertNo, rating, cuisine} = req.body;
+    const {
+      name,
+      password,
+      phoneNumber,
+      locationName,
+      longitude,
+      latitude,
+      fcmToken,
+      businessRegNo,
+      HealthCertNo,
+      rating,
+      cuisine,
+    } = req.body;
     const businessLogo = req.file;
     const result = await cloudinary.uploader.upload(businessLogo.path, {
       width: 500,
@@ -51,26 +63,48 @@ export async function createVendor(req, res) {
       crop: "scale",
     });
 
-    if (!password || !name || !phoneNumber || !latitude || !longitude || !cuisine || !businessRegNo || !HealthCertNo) {
-      logger.error('Missing required fields for creating vendor');
-      return res.status(400).json({ message: "Please enter all the required fields" });
+    if (
+      !password ||
+      !name ||
+      !phoneNumber ||
+      !latitude ||
+      !longitude ||
+      !cuisine ||
+      !businessRegNo ||
+      !HealthCertNo
+    ) {
+      logger.error("Missing required fields for creating vendor");
+      return res
+        .status(400)
+        .json({ message: "Please enter all the required fields" });
     }
 
     const hashedPassword = await bcrypt.hash(password, Number(bcryptSalt));
 
     const existingVendor = await Vendor.findOne({ name });
     if (existingVendor) {
-      logger.error('Vendor with the same username already exists');
+      logger.error("Vendor with the same username already exists");
       return res.status(409).json({ message: "Username already in use" });
     }
 
-    const newVendor = new Vendor({ name, phoneNumber, password: hashedPassword, fcmToken, latitude, longitude, locationName, HealthCertNo, businessRegNo, rating, cuisine,
+    const newVendor = new Vendor({
+      name,
+      phoneNumber,
+      password: hashedPassword,
+      fcmToken,
+      latitude,
+      longitude,
+      locationName,
+      HealthCertNo,
+      businessRegNo,
+      rating,
+      cuisine,
       businessLogo: result.secure_url,
     });
 
     // Save the customer to the database
     const savedVendor = await newVendor.save();
-    logger.info('Vendor created successfully');
+    logger.info("Vendor created successfully");
     const redisKey = `vendor:${savedVendor._id}`;
     await redisClient.setEx(redisKey, 3600, JSON.stringify(savedVendor)); // Cache for 1 hour (adjust as needed)
 
@@ -90,10 +124,10 @@ export async function createVendor(req, res) {
       businessRegNo: savedVendor.HealthCertNo,
       token: generateToken(savedVendor.id),
       sessionId,
-      fcmToken: savedVendor.fcmToken
+      fcmToken: savedVendor.fcmToken,
     });
   } catch (error) {
-    logger.error('Error registering vendor: ', error);
+    logger.error("Error registering vendor: ", error);
     console.log("Error registering vendor:", error);
     return res.status(500).json({ error: "An error occurred" });
   }
@@ -105,14 +139,28 @@ export async function updateVendor(req, res) {
     const redisKey = `vendor:${vendorId}`;
     const vendor = await Vendor.findById(vendorId);
     if (!vendor) {
-      logger.error('The vendor does not exist')
+      logger.error("The vendor does not exist");
       res.status(400);
       throw new Error("The vendor does not exist!");
     } else {
-      const {paymail, publicKey, secretKey, benkikoToken, name, businessRegNo, phoneNumber, rating, locationName, latitude, longitude, cuisine, riders} = req.body;
-      let businessLogo = vendor.businessLogo
+      const {
+        paymail,
+        publicKey,
+        secretKey,
+        benkikoToken,
+        name,
+        businessRegNo,
+        phoneNumber,
+        rating,
+        locationName,
+        latitude,
+        longitude,
+        cuisine,
+        riders,
+      } = req.body;
+      let businessLogo = vendor.businessLogo;
 
-      if(req.body.itemName){
+      if (req.body.itemName) {
         const dish = req.body.itemName; // Get the name to add from the request
 
         if (vendor.specialties.includes(dish)) {
@@ -120,7 +168,7 @@ export async function updateVendor(req, res) {
           res.status(400).json({ message: "Dish already in specialties." });
           return;
         }
-  
+
         // Add the new name to specialties
         vendor.specialties.push(dish);
       }
@@ -131,22 +179,38 @@ export async function updateVendor(req, res) {
           width: 500,
           height: 500,
           crop: "scale",
-          quality: 60
+          quality: 60,
         });
-        businessLogo = result.secure_url
+        businessLogo = result.secure_url;
       }
       const updatedVendor = await Vendor.findByIdAndUpdate(
         req.params.id,
-        {paymail, publicKey, secretKey, benkikoToken, specialties: vendor.specialties, name, locationName, latitude, longitude, phoneNumber, businessRegNo,rating, cuisine, businessLogo, riders},
+        {
+          paymail,
+          publicKey,
+          secretKey,
+          benkikoToken,
+          specialties: vendor.specialties,
+          name,
+          locationName,
+          latitude,
+          longitude,
+          phoneNumber,
+          businessRegNo,
+          rating,
+          cuisine,
+          businessLogo,
+          riders,
+        },
         { new: true }
       );
       await redisClient.setEx(redisKey, 3600, JSON.stringify(updatedVendor)); // Cache for 1 hour (adjust as needed)
 
-      logger.info('Vendor has been updated successfully')
+      logger.info("Vendor has been updated successfully");
       res.status(200).json(updatedVendor);
     }
   } catch (error) {
-    logger.error(error)
+    logger.error(error);
     console.log("Error updating vendor: ", error);
     return res.status(400).json({ message: "The vendor does not exist" });
   }
@@ -186,16 +250,17 @@ export async function loginVendor(req, res) {
         secretKey: user.secretKey,
         publicKey: user.publicKey,
         token,
-        fcmToken: user.fcmToken
+        fcmToken: user.fcmToken,
       });
     } else {
-      logger.error("Invalid login credentials")
+      logger.error("Invalid login credentials");
       res.status(400);
       throw new Error("The credentials you entered are invalid");
     }
   } catch (error) {
-    logger.error('Invalid login credentials')
-    return res.status(400)
+    logger.error("Invalid login credentials");
+    return res
+      .status(400)
       .json({ message: "The credentials you entered are invalid." });
   }
 }
@@ -245,8 +310,10 @@ export const requestResetPassword = async (req, res) => {
 
 export async function changePassword(req, res) {
   const { email, password } = req.body;
-  if(!email || !password){
-    return res.status(400).json({ message: "Please enter all the required fields" });
+  if (!email || !password) {
+    return res
+      .status(400)
+      .json({ message: "Please enter all the required fields" });
   }
   const vendor = await Vendor.findOne({ email });
   try {
@@ -264,10 +331,10 @@ export async function changePassword(req, res) {
       { password: hashedPassword },
       { new: true }
     );
-    logger.info(`${vendor.name} - changed password successfully`)
+    logger.info(`${vendor.name} - changed password successfully`);
     res.status(200).json({ message: "Password changed successfully." });
   } catch (error) {
-    logger.error(`Error changing password for vendor - ${vendor.name}`)
+    logger.error(`Error changing password for vendor - ${vendor.name}`);
     res.status(500).json({ error: "Failed to change password" });
   }
 }
@@ -275,28 +342,29 @@ export async function changePassword(req, res) {
 export async function getVendor(req, res) {
   try {
     const vendorId = req.params.id;
-    const redisKey = `vendor:${vendorId}`;
+    // const redisKey = `vendor:${vendorId}`;
 
     // Attempt to retrieve data from Redis
-    const cachedData = await redisClient.get(redisKey);
+    // const cachedData = await redisClient.get(redisKey);
 
-    if (cachedData) {
-      // Data found in cache, send it as a response
-      res.status(200).json(JSON.parse(cachedData));
+    // if (cachedData) {
+    //   // Data found in cache, send it as a response
+    //   res.status(200).json(JSON.parse(cachedData));
+    // }
+    // else {
+    // Data not found in cache, fetch it from the database
+    const vendor = await Vendor.findById(vendorId);
+
+    if (!vendor) {
+      res.status(400);
+      throw new Error("This vendor does not exist");
     } else {
-      // Data not found in cache, fetch it from the database
-      const vendor = await Vendor.findById(vendorId);
+      // Cache the fetched data in Redis for future use
+      // await redisClient.setEx(redisKey, 3600, JSON.stringify(vendor)); // Cache for 1 hour (adjust as needed)
 
-      if (!vendor) {
-        res.status(400);
-        throw new Error("This vendor does not exist");
-      } else {
-        // Cache the fetched data in Redis for future use
-        await redisClient.setEx(redisKey, 3600, JSON.stringify(vendor)); // Cache for 1 hour (adjust as needed)
-
-        res.status(200).json(vendor);
-      }
+      res.status(200).json(vendor);
     }
+    // }
   } catch (error) {
     res.status(400).json({ message: "This vendor does not exist" });
   }
@@ -343,12 +411,16 @@ export async function addRider(req, res) {
       quality: 50,
     });
 
-    const vendor = await Vendor.findById(req.params.id)
+    const vendor = await Vendor.findById(req.params.id);
 
-    const isRiderAssociated = vendor.riders.some((riderInfo) => riderInfo.email === email);
+    const isRiderAssociated = vendor.riders.some(
+      (riderInfo) => riderInfo.email === email
+    );
 
     if (isRiderAssociated) {
-      return res.status(400).json({ error: "Rider is already associated with this vendor" });
+      return res
+        .status(400)
+        .json({ error: "Rider is already associated with this vendor" });
     }
 
     const newRider = await Rider.create({
@@ -369,13 +441,13 @@ export async function addRider(req, res) {
     };
     vendor.riders.push(riderInfo);
     await vendor.save();
-    logger.info('Rider added successfully')
+    logger.info("Rider added successfully");
 
     sgMail.setApiKey(process.env.SENDGRID_APIKEY);
     const confirmToken = jwt.sign({ riderInfo }, process.env.JWT_SECRET, {
       expiresIn: "1h",
     });
-    const confirmLink = `${clientUrl}/rider/${newRider._id}/${confirmToken}/${vendor._id}`; 
+    const confirmLink = `${clientUrl}/rider/${newRider._id}/${confirmToken}/${vendor._id}`;
     const msg = {
       to: email,
       from: "Mobileeatbyosumo@gmail.com", //remember to change this to the official client side email
@@ -385,24 +457,46 @@ export async function addRider(req, res) {
     sgMail
       .send(msg)
       .then(() => {
-        logger.info(`Email sent successfully to ${riderInfo.email}`)
+        logger.info(`Email sent successfully to ${riderInfo.email}`);
         // res.status(200).json({ message: `Email sent successfully to ${riderInfo.email}` });
       })
       .catch((error) => {
         // res.status(400).json({ error: "Failed to send email to rider" });
-        logger.error(`Failed to send email to rider - ${riderInfo.email}`, error)
+        logger.error(
+          `Failed to send email to rider - ${riderInfo.email}`,
+          error
+        );
       });
 
-    res.status(200).json({ message: "New rider added to the vendor's riders successfully and email sent" });
+    res
+      .status(200)
+      .json({
+        message:
+          "New rider added to the vendor's riders successfully and email sent",
+      });
   } catch (error) {
-    logger.error('Rider you tried to add was not found: ', error)
+    logger.error("Rider you tried to add was not found: ", error);
     res.status(500).json({ message: "Rider not found!" });
     console.error("Error adding rider to vendor:", error);
   }
 }
 
 export async function editRider(req, res) {
-  const { name, email, phoneNumber, availability, password, paymail, secretKey, publicKey, address,latitude,longitude, licenseExpiry, licensePlate } = req.body;
+  const {
+    name,
+    email,
+    phoneNumber,
+    availability,
+    password,
+    paymail,
+    secretKey,
+    publicKey,
+    address,
+    latitude,
+    longitude,
+    licenseExpiry,
+    licensePlate,
+  } = req.body;
   const { riderId, id } = req.params;
   let image;
   let id_image;
@@ -412,35 +506,49 @@ export async function editRider(req, res) {
     const vendor = await Vendor.findById(id);
 
     // Find the rider in the vendor's profile
-    const riderIndex = vendor.riders.findIndex((rider) => rider.riderId.toString() === riderId);
+    const riderIndex = vendor.riders.findIndex(
+      (rider) => rider.riderId.toString() === riderId
+    );
     if (riderIndex === -1) {
-      return res.status(404).json({ error: "Rider not found in vendor's profile" });
+      return res
+        .status(404)
+        .json({ error: "Rider not found in vendor's profile" });
     }
-    if(req.file){
-      if(req.files["image"]){
-        const result = await cloudinary.uploader.upload(req.files['image'][0].path, {
-          width: 500,
-          height: 500,
-          crop: 'scale',
-          quality: 60
-        })
-        image = result.secure_url
+    if (req.file) {
+      if (req.files["image"]) {
+        const result = await cloudinary.uploader.upload(
+          req.files["image"][0].path,
+          {
+            width: 500,
+            height: 500,
+            crop: "scale",
+            quality: 60,
+          }
+        );
+        image = result.secure_url;
       }
-      if(req.files["id_image"]){
-        const result = await cloudinary.uploader.upload(req.files['id_image'][0].path, {
-          width: 500,
-          height: 500,
-          crop: 'scale',
-          quality: 60
-        })
-        id_image = result.secure_url
+      if (req.files["id_image"]) {
+        const result = await cloudinary.uploader.upload(
+          req.files["id_image"][0].path,
+          {
+            width: 500,
+            height: 500,
+            crop: "scale",
+            quality: 60,
+          }
+        );
+        id_image = result.secure_url;
       }
     }
 
     if (password) {
       hashedPassword = await bcrypt.hash(password, Number(bcryptSalt));
       vendor.riders[riderIndex].password = hashedPassword;
-      await Rider.findByIdAndUpdate(riderId,{password: hashedPassword},{new:true})
+      await Rider.findByIdAndUpdate(
+        riderId,
+        { password: hashedPassword },
+        { new: true }
+      );
     }
 
     // Check which fields are provided in the request and update only those fields
@@ -451,27 +559,43 @@ export async function editRider(req, res) {
     if (paymail) vendor.riders[riderIndex].paymail = paymail;
     if (secretKey) vendor.riders[riderIndex].secretKey = secretKey;
     if (publicKey) vendor.riders[riderIndex].publicKey = publicKey;
-    if(address) vendor.riders[riderIndex].address = address;;
-    if(latitude) vendor.riders[riderIndex].latitude = latitude;
-    if(longitude) vendor.riders[riderIndex].longitude = longitude;
-    if(licenseExpiry) vendor.riders[riderIndex].licenseExpiry = licenseExpiry;
-    if(licensePlate) vendor.riders[riderIndex].licensePlate = licensePlate;
-    if(image) vendor.riders[riderIndex].image = image
-    if(id_image) vendor.riders[riderIndex].id_image = id_image
-    vendor.markModified("riders")
-    await vendor.save()
-
-
-    // if(password, address, latitude, longitude,licenseExpiry, licensePlate, image, id_image){
-      await Rider.findByIdAndUpdate(riderId, {address, latitude, longitude,licenseExpiry, availability, licensePlate, image, id_image}, {new: true})
-    // }
+    if (address) vendor.riders[riderIndex].address = address;
+    if (latitude) vendor.riders[riderIndex].latitude = latitude;
+    if (longitude) vendor.riders[riderIndex].longitude = longitude;
+    if (licenseExpiry) vendor.riders[riderIndex].licenseExpiry = licenseExpiry;
+    if (licensePlate) vendor.riders[riderIndex].licensePlate = licensePlate;
+    if (image) vendor.riders[riderIndex].image = image;
+    if (id_image) vendor.riders[riderIndex].id_image = id_image;
+    vendor.markModified("riders");
+    await Promise.all([
+      await vendor.save(),
+      await Rider.findByIdAndUpdate(
+        riderId,
+        {
+          address,
+          latitude,
+          longitude,
+          licenseExpiry,
+          availability,
+          licensePlate,
+          image,
+          id_image,
+        },
+        { new: true }
+      ),
+    ]);
     // Save the updated vendor document to the database
-    logger.info('Rider updated successfully')
+    logger.info("Rider updated successfully");
 
-    res.status(200).json({ message: "Rider updated successfully", rider: vendor.riders[riderIndex] });
+    res
+      .status(200)
+      .json({
+        message: "Rider updated successfully",
+        rider: vendor.riders[riderIndex],
+      });
   } catch (error) {
     // Handle the error, e.g., return an error response to the client
-    logger.error('There was an error updating rider: ', error)
+    logger.error("There was an error updating rider: ", error);
     res.status(500).json({ error: "Error updating rider" });
     console.error("Error updating rider:", error);
   }
@@ -493,15 +617,19 @@ export async function deleteRider(req, res) {
     );
 
     if (riderIndex === -1) {
-      return res.status(404).json({ error: "Rider not associated with this vendor" });
+      return res
+        .status(404)
+        .json({ error: "Rider not associated with this vendor" });
     }
 
-    // Remove the rider from the vendor's riders array and save 
+    // Remove the rider from the vendor's riders array and save
     vendor.riders.splice(riderIndex, 1);
     await vendor.save();
-    logger.info(`Rider removed from vendor: ${vendor.name} successfully`)
+    logger.info(`Rider removed from vendor: ${vendor.name} successfully`);
 
-    res.status(200).json({ message: "Rider removed from the vendor successfully" });
+    res
+      .status(200)
+      .json({ message: "Rider removed from the vendor successfully" });
   } catch (error) {
     res.status(500).json({ message: "Error removing rider from vendor" });
     console.error("Error removing rider from vendor:", error);
@@ -526,7 +654,7 @@ export async function deleteVendor(req, res) {
       logger.info(`Vendor: ${vendor.name} deleted successfully`);
     }
   } catch (error) {
-    logger.error('An error occured when deleting vendor: ', error)
+    logger.error("An error occured when deleting vendor: ", error);
     res.status(400).json({ message: "Vendor not found!" });
     console.error("Error getting vendors:", error);
   }
@@ -549,5 +677,5 @@ export default {
   addRider,
   deleteVendor,
   editRider,
-  deleteRider
+  deleteRider,
 };
