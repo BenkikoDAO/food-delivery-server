@@ -416,23 +416,25 @@ export async function editRider(req, res) {
     if (riderIndex === -1) {
       return res.status(404).json({ error: "Rider not found in vendor's profile" });
     }
-    if(req.files["image"]){
-      const result = await cloudinary.uploader.upload(req.files['image'][0].path, {
-        width: 500,
-        height: 500,
-        crop: 'scale',
-        quality: 60
-      })
-      image = result.secure_url
-    }
-    if(req.files["id_image"]){
-      const result = await cloudinary.uploader.upload(req.files['id_image'][0].path, {
-        width: 500,
-        height: 500,
-        crop: 'scale',
-        quality: 60
-      })
-      id_image = result.secure_url
+    if(req.file){
+      if(req.files["image"]){
+        const result = await cloudinary.uploader.upload(req.files['image'][0].path, {
+          width: 500,
+          height: 500,
+          crop: 'scale',
+          quality: 60
+        })
+        image = result.secure_url
+      }
+      if(req.files["id_image"]){
+        const result = await cloudinary.uploader.upload(req.files['id_image'][0].path, {
+          width: 500,
+          height: 500,
+          crop: 'scale',
+          quality: 60
+        })
+        id_image = result.secure_url
+      }
     }
 
     // if (req.file) {
