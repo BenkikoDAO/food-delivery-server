@@ -437,24 +437,6 @@ export async function editRider(req, res) {
       }
     }
 
-    // if (req.file) {
-    //   // If a new image is uploaded, update it in Cloudinary
-    //   const result = await cloudinary.uploader.upload(req.file.path, {
-    //     width: 500,
-    //     height: 500,
-    //     crop: "scale",
-    //     quality: 60
-    //   });
-    //   if(req.file.fieldName === "image"){
-    //     vendor.riders[riderIndex].image = result.secure_url;
-    //     await Rider.findByIdAndUpdate(riderId, {image: result.secure_url},{new:true})
-    //   } else if(req.file.fieldName === "id_image"){
-    //     vendor.riders[riderIndex].id_image = result.secure_url
-    //     await Rider.findByIdAndUpdate(riderId, {id_image: result.secure_url}, {new:true})
-
-    //   }
-    // }
-
     if (password) {
       hashedPassword = await bcrypt.hash(password, Number(bcryptSalt));
       vendor.riders[riderIndex].password = hashedPassword;
@@ -476,7 +458,8 @@ export async function editRider(req, res) {
     if(licensePlate) vendor.riders[riderIndex].licensePlate = licensePlate;
     if(image) vendor.riders[riderIndex].image = image
     if(id_image) vendor.riders[riderIndex].id_image = id_image
-    await vendor.save();
+    vendor.markModified("riders")
+    await vendor.save()
 
 
     // if(password, address, latitude, longitude,licenseExpiry, licensePlate, image, id_image){
