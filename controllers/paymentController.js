@@ -62,3 +62,16 @@ export async function handleCallback(req, res) {
       res.status(500).json({ message: 'An error occurred when fetching your response' });
     }
   }
+
+  export async function getPayouts(req, res){
+    const vendorId = req.params.id
+    if(!vendorId){
+      return res.status(400).json({error: "Vendor id is required"})
+    }
+    try {
+      const payouts = await Payment.find({ vendorId: vendorId })
+      res.status(200).json(payouts)
+    } catch (error) {
+      return res.status(400).json({error:"An error occured"})
+    }
+  }
