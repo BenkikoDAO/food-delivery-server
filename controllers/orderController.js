@@ -63,7 +63,7 @@ export async function createOrder(req, res) {
     notifications.push(notification);
     // Find the WebSocket connection for the vendor (if exists)
     const vendorWebSocket = Array.from(wss.clients).find((client) => {
-      return client.vendorId === vendor._id.toString();
+      return client.id === vendor._id.toString();
     });
     // If a WebSocket connection exists for the vendor, send the notification
     if (vendorWebSocket) {

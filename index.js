@@ -56,12 +56,12 @@ const wss = new WebSocketServer({ server });
 wss.on('connection', (ws, req) => {
   console.log('New WebSocket connection');
 
-  // Extract the vendorId from the query parameters or headers
+  // Extract the id from the query parameters or headers
   const url = new URL(req.url, 'https://mobile-eats.onrender.com');
-  const vendorId = url.searchParams.get('vendorId'); // Assuming vendorId is sent as a query parameter
+  const id = url.searchParams.get('id'); // Assuming id is sent as a query parameter
 
-  // Store the vendorId in the WebSocket client object
-  ws.vendorId = vendorId;
+  // Store the id in the WebSocket client object
+  ws.id = id;
 
   ws.on('message', (message) => {
     console.log(`Received message: ${message}`);
