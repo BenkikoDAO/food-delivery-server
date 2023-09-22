@@ -49,6 +49,12 @@ const riderSchema = new mongoose.Schema({
   },
   id_image:{
     type: String
+  },
+  orderId:{
+    type: mongoose.Schema.Types.ObjectId,
+  },
+  order:{
+    type:Array
   }
 });
 
