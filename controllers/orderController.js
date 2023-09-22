@@ -36,7 +36,7 @@ export async function createOrder(req, res) {
     const vendorCartItems = cart.filter((item) => item.vendorName === vendorName);
     // Calculate the total amount for the order
     const orderTotalAmount = vendorCartItems.reduce((total, item) => {
-      return total + item.price + item.deliveryFee;
+      return total + item.price;
     }, 0);
     const alphabet =
       "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
