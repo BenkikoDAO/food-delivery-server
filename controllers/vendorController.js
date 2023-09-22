@@ -476,13 +476,13 @@ export async function editRider(req, res) {
     if(licensePlate) vendor.riders[riderIndex].licensePlate = licensePlate;
     if(image) vendor.riders[riderIndex].image = image
     if(id_image) vendor.riders[riderIndex].id_image = id_image
+    await vendor.save();
 
 
     // if(password, address, latitude, longitude,licenseExpiry, licensePlate, image, id_image){
-      await Rider.findByIdAndUpdate(riderId, {address, latitude, longitude,licenseExpiry, licensePlate, image, id_image}, {new: true})
+      await Rider.findByIdAndUpdate(riderId, {address, latitude, longitude,licenseExpiry, availability, licensePlate, image, id_image}, {new: true})
     // }
     // Save the updated vendor document to the database
-    await vendor.save();
     logger.info('Rider updated successfully')
 
     res.status(200).json({ message: "Rider updated successfully", rider: vendor.riders[riderIndex] });
