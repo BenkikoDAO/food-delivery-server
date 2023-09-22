@@ -1,5 +1,6 @@
 import Rider from "../models/rider.js";
 import Vendor from "../models/vendor.js";
+import Notification from "../models/notifications.js"
 import Order from "../models/order.js"
 import bcrypt from "bcrypt";
 import logger from "../helpers/logging.js";
@@ -133,6 +134,8 @@ export async function updateRider(req, res) {
   const redisKey = `rider${riderId}`;
   const rider = await Rider.findById(riderId);
 
+  const wss = req.app.get("wss");
+
   if (!rider) {
     return res
       .status(404)
@@ -193,6 +196,23 @@ export async function updateRider(req, res) {
     
         if (!existingOrder) {
           rider.order.push(order);
+          const notificationMessage = `You have been assigned a new order - Order No #${order.orderNumber} from a vendor. Check the order details on the dashboard and deliver the dishes to customer.`;
+          const notification = new Notification({
+            riderId: rider._id,
+            message: notificationMessage,
+          });
+          await notification.save();
+          const riderWebsocket = Array.from(wss.clients).find((client) => {
+            return client.id === rider._id.toString();
+          });
+          if (riderWebsocket) {
+            const notificationPayload = {
+              type: "New order",
+              message: notificationMessage,
+              order: order,
+            };
+            riderWebsocket.send(JSON.stringify(notificationPayload));
+          }
         } else {
           // Handle the case where the order already exists in the array
           // You can throw an error, log a message, or perform any desired action
@@ -222,6 +242,8 @@ export async function updateRider(req, res) {
           "riders.$[rider].latitude": latitude,
           "riders.$[rider].paymail": paymail,
           "riders.$[rider].id-image": id_image,
+          "riders.$[rider].availability": availability,
+
           
         },
       },
