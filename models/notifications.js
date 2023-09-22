@@ -5,6 +5,9 @@ const notificationSchema = new mongoose.Schema({
     },
     message:{
         type: String
+    },
+    riderId:{
+        type: mongoose.Schema.Types.ObjectId
     }
 }, {timestamps: true})
 
