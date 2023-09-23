@@ -333,14 +333,14 @@ export async function changePassword(req, res) {
 
 export async function getRider(req, res) {
   try {
-    const riderId = req.params.id;
-    const redisKey = `rider:${riderId}`;
+    // const riderId = req.params.id;
+    // const redisKey = `rider:${riderId}`;
 
-    // Attempt to retrieve data from Redis
-    const cachedData = await redisClient.get(redisKey);
-    if (cachedData) {
-      res.status(200).json(JSON.parse(cachedData));
-    } else {
+    // // Attempt to retrieve data from Redis
+    // const cachedData = await redisClient.get(redisKey);
+    // if (cachedData) {
+    //   res.status(200).json(JSON.parse(cachedData));
+    // } else {
       const rider = await Rider.findById(req.params.id);
       if (!rider) {
         res.status(400);
@@ -348,10 +348,10 @@ export async function getRider(req, res) {
       } else {
         res.status(200).json(rider);
       }
-    }
+    // }
   } catch (error) {
     console.error("Error getting rider:", error);
-    res.status(500).json({ error: "An error occurred" });
+    res.status(404).json({ error: "An error occurred" });
   }
 }
 
