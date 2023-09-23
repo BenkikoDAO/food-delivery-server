@@ -213,11 +213,12 @@ export async function calcDeliveryFee(req, res) {
         const distanceInKilometers = distanceInMeters / 1000;
         let deliveryFee = distanceInKilometers * ratePerKilometer;
 
-        // Ensure the minimum delivery fee is 60 shillings
+        // Ensure the minimum delivery fee is 22 shillings
         if (deliveryFee < 22) {
           deliveryFee = 22;
         }
-        const roundedDeliveryFee = Math.round(deliveryFee / 5) * 5;
+        //rounds to the next multiple of 5
+        const roundedDeliveryFee = Math.ceil(deliveryFee / 5) * 5;
         // Store the delivery fee for each vendor
         vendorDeliveryFees[vendorName] = parseFloat(roundedDeliveryFee.toFixed(0));
       }
