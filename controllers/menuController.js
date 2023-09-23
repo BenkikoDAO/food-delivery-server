@@ -149,8 +149,21 @@ export async function addMenuItem(req, res) {
 export async function getMenuItems(req, res) {
   try {
     const items = await Menu.find();
+
+    // Filter out items with dishType of "Main course"
+    const filteredItems = items.filter((item) => item.dishType !== "Extras");
+
+    res.status(200).json(filteredItems);
+  } catch (error) {
+    logger.error('There are no vendor items at this time')
+    res.status(400).json({ message: "There are no menu items at this time" });
+  }
+}
+
+export async function getExtras(req,res){
+  try{
+    const items = await Menu.find({ dishType: "Extras" })
     res.status(200).json(items)
-    
   } catch (error) {
     logger.error('There are no vendor items at this time')
     res.status(400).json({ message: "There are no menu items at this time" });
