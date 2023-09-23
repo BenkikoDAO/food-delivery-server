@@ -3,6 +3,7 @@ import multer from "multer";
 import { v2 as cloudinary } from "cloudinary";
 import logger from "../helpers/logging.js";
 import redisClient from "../helpers/redisClient.js";
+import Rating from '../models/rating.js'
 dotenv.config();
 
 import Vendor from "../models/vendor.js";
