@@ -162,7 +162,16 @@ export async function getMenuItems(req, res) {
 
 export async function getExtras(req,res){
   try{
-    const items = await Menu.find({ dishType: "Extras" })
+    const vendorId = req.params.id;
+
+    // Assuming you have a Vendor model with a field 'vendorId'
+    const vendor = await Vendor.findById(vendorId);
+
+    if (!vendor) {
+      // Vendor with the provided ID not found
+      return res.status(404).json({ message: "Vendor not found" });
+    }
+    const items = await Menu.find({ vendorID: vendor._id, dishType: "Extras" })
     res.status(200).json(items)
   } catch (error) {
     logger.error('There are no vendor items at this time')
