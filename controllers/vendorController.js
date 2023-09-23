@@ -375,13 +375,13 @@ export async function getVendors(req, res) {
   try {
     const redisKey = "vendors";
 
-    // Attempt to retrieve data from Redis
-    const cachedData = await redisClient.get(redisKey);
+    // // Attempt to retrieve data from Redis
+    // const cachedData = await redisClient.get(redisKey);
 
-    if (cachedData) {
-      // Data found in cache, send it as a response
-      res.status(200).json(JSON.parse(cachedData));
-    } else {
+    // if (cachedData) {
+    //   // Data found in cache, send it as a response
+    //   res.status(200).json(JSON.parse(cachedData));
+    // } else {
       // Data not found in cache, fetch it from the database
       const vendors = await Vendor.find();
 
@@ -390,11 +390,11 @@ export async function getVendors(req, res) {
         throw new Error("Couldn't find any vendors");
       } else {
         // Cache the fetched data in Redis for future use
-        await redisClient.setEx(redisKey, 3600, JSON.stringify(vendors)); // Cache for 1 hour (adjust as needed)
+        // await redisClient.setEx(redisKey, 3600, JSON.stringify(vendors)); // Cache for 1 hour (adjust as needed)
 
         res.status(200).json(vendors);
       }
-    }
+    // }
   } catch (error) {
     res.status(400).json({ message: "Couldn't find any vendors" });
     console.error("Error getting vendors:", error);
