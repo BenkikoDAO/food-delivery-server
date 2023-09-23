@@ -237,6 +237,7 @@ export default {
   updateMenuItem,
   getMenuItemByVendor,
   getMenuItem,
+  getExtras,
   getMenuItems,
   deleteMenuItem,
 };
