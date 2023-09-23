@@ -14,6 +14,7 @@ import riderRoute from './routes/riderRoute.js'
 import vendorRoute from './routes/vendorRoute.js'
 import menuRoute from './routes/menuRoute.js'
 import orderRoute from './routes/orderRoute.js'
+import ratingRoute from './routes/ratingRoute.js'
 import cartRoute from './routes/cartRoute.js'
 import paymentCallback from './routes/paymentRoute.js'
 import WebSocket, {WebSocketServer} from 'ws';
@@ -82,6 +83,8 @@ app.set('wss', wss);
   app.use("/api/v1/order", orderRoute)
   app.use("/api/v1/cart", cartRoute)
   app.use("/api/v1/payment", paymentCallback)
+  app.use("/api/v1/ratings", ratingRoute)
+
 
 // Start the server
 // app.listen(PORT, () => {
