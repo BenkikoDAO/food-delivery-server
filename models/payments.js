@@ -16,6 +16,9 @@ const paymentSchema = new mongoose.Schema(
     vendorId: {
       type: mongoose.Schema.Types.ObjectId,
     },
+    riderId:{
+      type: mongoose.Schema.Types.ObjectId,
+    }
   },
   { timestamps: true }
 );

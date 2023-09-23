@@ -75,3 +75,16 @@ export async function handleCallback(req, res) {
       return res.status(400).json({error:"An error occured"})
     }
   }
+
+  export async function getRiderPayouts(req, res){
+    const riderId = req.params.id
+    if(!riderId){
+      return res.status(400).json({error: "Rider id is required"})
+    }
+    try {
+      const payouts = await Payment.find({ riderId: riderId })
+      res.status(200).json(payouts)
+    } catch (error) {
+      return res.status(400).json({error:"An error occured"})
+    }
+  }
