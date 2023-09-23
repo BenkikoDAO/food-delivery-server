@@ -43,11 +43,12 @@ export async function handleCallback(req, res) {
 
   export async function getPayoutResponse(req, res) {
     try {
-      const { payoutRef, transactionType, vendorId } = req.body;
+      const { payoutRef, transactionType, vendorId, riderId } = req.body;
   
       const response = await Payment.findOne({ 'data.payout_reference': payoutRef });
       response.transactionType = transactionType
       response.vendorId = vendorId
+      response.riderId = riderId
       await response.save()
   
     //   if (!response) {

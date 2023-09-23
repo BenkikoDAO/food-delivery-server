@@ -6,7 +6,7 @@ import { handleCallback, getCallbackResponse, getRiderPayouts, getPayoutResponse
 router.route("/callback").post(handleCallback)
 router.route("/response").post(getCallbackResponse)
 router.route("/payout-response").post(getPayoutResponse)
-router.route("/rider/:id").post(getRiderPayouts)
+router.route("/rider/:id").get(getRiderPayouts)
 router.route("/:id").get(getPayouts)
 
 export default router
