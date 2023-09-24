@@ -1,7 +1,7 @@
 import Rider from "../models/rider.js";
 import Vendor from "../models/vendor.js";
-import Notification from "../models/notifications.js"
-import Order from "../models/order.js"
+import Notification from "../models/notifications.js";
+import Order from "../models/order.js";
 import bcrypt from "bcrypt";
 import logger from "../helpers/logging.js";
 import sgMail from "@sendgrid/mail";
@@ -155,45 +155,51 @@ export async function updateRider(req, res) {
       latitude,
       licenseExpiry,
       licensePlate,
-      orderId
+      orderId,
     } = req.body;
 
     let hashedPassword;
-    let id_image = rider.id_image
-    let image = rider.image
+    let id_image = rider.id_image;
+    let image = rider.image;
 
     if (password) {
       hashedPassword = await bcrypt.hash(password, Number(bcryptSalt));
     }
-    if(req.files["image"]){
-      const result = await cloudinary.uploader.upload(req.files['image'][0].path, {
-        width: 500,
-        height: 500,
-        crop: 'scale',
-        quality: 60
-      })
-      image = result.secure_url
+    if (req.files["image"]) {
+      const result = await cloudinary.uploader.upload(
+        req.files["image"][0].path,
+        {
+          width: 500,
+          height: 500,
+          crop: "scale",
+          quality: 60,
+        }
+      );
+      image = result.secure_url;
     }
-    if(req.files["id_image"]){
-      const result = await cloudinary.uploader.upload(req.files['id_image'][0].path, {
-        width: 500,
-        height: 500,
-        crop: 'scale',
-        quality: 60
-      })
-      id_image = result.secure_url
+    if (req.files["id_image"]) {
+      const result = await cloudinary.uploader.upload(
+        req.files["id_image"][0].path,
+        {
+          width: 500,
+          height: 500,
+          crop: "scale",
+          quality: 60,
+        }
+      );
+      id_image = result.secure_url;
     }
-    if(orderId){
+    if (orderId) {
       try {
         const order = await Order.findById(orderId);
-    
+
         if (!order) {
           throw new Error("Order does not exist");
-        } 
+        }
         const existingOrder = rider.order.find((riderOrder) =>
           riderOrder._id.equals(order._id)
         );
-    
+
         if (!existingOrder) {
           rider.order.push(order);
           const notificationMessage = `You have been assigned a new order - Order No #${order.orderNumber} from a vendor. Check the order details on the dashboard and deliver the dishes to customer.`;
@@ -218,14 +224,30 @@ export async function updateRider(req, res) {
           // You can throw an error, log a message, or perform any desired action
           logger.info("Order already exists in the rider's order array");
         }
-        await rider.save()
+        await rider.save();
       } catch (error) {
         logger.info("Error finding order");
       }
     }
     const updatedRider = await Rider.findByIdAndUpdate(
       req.params.id,
-      { name, email, phoneNumber, availability, paymail, password: hashedPassword, secretKey, publicKey,address,longitude,latitude,licenseExpiry,licensePlate,id_image, image},
+      {
+        name,
+        email,
+        phoneNumber,
+        availability,
+        paymail,
+        password: hashedPassword,
+        secretKey,
+        publicKey,
+        address,
+        longitude,
+        latitude,
+        licenseExpiry,
+        licensePlate,
+        id_image,
+        image,
+      },
       { new: true }
     );
     await Vendor.updateMany(
@@ -243,8 +265,6 @@ export async function updateRider(req, res) {
           "riders.$[rider].paymail": paymail,
           "riders.$[rider].id-image": id_image,
           "riders.$[rider].availability": availability,
-
-          
         },
       },
       {
@@ -256,6 +276,36 @@ export async function updateRider(req, res) {
     res.status(200).json(updatedRider);
   }
 }
+
+export const updateRiderOrder = async (req, res) => {
+  const riderId = req.params.id;
+  const { orderId, status } = req.body;
+
+  try {
+    const rider = await Rider.findById(riderId);
+    if (!rider) {
+      return res.status(400).json({ message: "Rider does not exist" });
+    }
+    const orderIndex = rider.order.findIndex(
+      (item) => item._id.toString() === orderId
+    );
+    if (orderIndex === -1) {
+      return res
+        .status(404)
+        .json({ message: "Order not found for this rider" });
+    }
+
+    // Update the order details
+    rider.order[orderIndex].status = status;
+
+    // Save the rider document to persist the changes
+    rider.markModified("order")
+    await rider.save();
+    return res.status(200).json({ message: "Order updated successfully" });
+  } catch (err) {
+    return res.status(400).json({ message: "An error occured", error });
+  }
+};
 
 export const requestResetPassword = async (req, res) => {
   const { email } = req.body;
@@ -341,13 +391,13 @@ export async function getRider(req, res) {
     // if (cachedData) {
     //   res.status(200).json(JSON.parse(cachedData));
     // } else {
-      const rider = await Rider.findById(req.params.id);
-      if (!rider) {
-        res.status(400);
-        throw new Error("Rider does not exist");
-      } else {
-        res.status(200).json(rider);
-      }
+    const rider = await Rider.findById(req.params.id);
+    if (!rider) {
+      res.status(400);
+      throw new Error("Rider does not exist");
+    } else {
+      res.status(200).json(rider);
+    }
     // }
   } catch (error) {
     console.error("Error getting rider:", error);
