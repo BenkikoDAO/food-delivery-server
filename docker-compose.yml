@@ -1,0 +1,21 @@
+version: '3'
+services:
+  web:
+    build: .
+    env_file:
+      - .env
+    image: millxn/mobile-eats
+    ports:
+      - "5000:5000"
+    environment:
+      - MONGO_CONNECTION_URL=$MONGO_CONNECTION_URL
+      - SESSION_SECRET=$SESSION_SECRET
+      - JWT_SECRET=$JWT_SECRET  # Corrected the syntax here
+      - BCRYPT_SALT=$BCRYPT_SALT
+      - CLOUDNAME=$CLOUDNAME
+      - CLOUDINARY_API_SECRET=$CLOUDINARY_API_SECRET
+      - CLOUDINARY_API_KEY=$CLOUDINARY_API_KEY
+      - OPENCAGE_GEOCODING_API_KEY=$OPENCAGE_GEOCODING_API_KEY
+      - CLIENT_URL=$CLIENT_URL
+      - REDIS_URL=$REDIS_URL
+

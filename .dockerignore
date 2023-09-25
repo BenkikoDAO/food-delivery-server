@@ -1,0 +1,16 @@
+npm-debug.log
+
+Dockerfile
+docker*.yml
+
+.git
+.gitignore
+.env
+logs/
+
+.npm
+.vscode
+node_modules
+
+README.md
+

@@ -1,4 +1,8 @@
 {
+  "author": "",
+  "bugs": {
+    "url": "https://github.com/munene-m/food-delivery-server/issues"
+  },
   "dependencies": {
     "@sendgrid/mail": "^7.7.0",
     "bcrypt": "^5.1.0",
@@ -24,27 +28,23 @@
     "winston-mongodb": "^5.1.1",
     "ws": "^8.13.0"
   },
+  "description": "This is the backend server for a food delivery web application. It is built using Node.js and MongoDB to handle vendor and customer data, order management, and delivery calculations.\r ### Features",
   "devDependencies": {
     "nodemon": "^3.0.1"
   },
-  "name": "mobile-eats",
-  "version": "1.0.0",
-  "main": "index.js",
-  "type": "module",
-  "scripts": {
-    "test": "",
-    "start": "nodemon index.js"
-  },
+  "homepage": "https://github.com/munene-m/food-delivery-server#readme",
   "keywords": [],
-  "author": "",
   "license": "ISC",
-  "description": "This is the backend server for a food delivery web application. It is built using Node.js and MongoDB to handle vendor and customer data, order management, and delivery calculations.\r ### Features",
+  "main": "src/index.js",
+  "name": "mobile-eats",
   "repository": {
     "type": "git",
     "url": "git+https://github.com/munene-m/food-delivery-server.git"
   },
-  "bugs": {
-    "url": "https://github.com/munene-m/food-delivery-server/issues"
+  "scripts": {
+    "start": "nodemon src/index.js",
+    "test": ""
   },
-  "homepage": "https://github.com/munene-m/food-delivery-server#readme"
+  "type": "module",
+  "version": "1.0.0"
 }

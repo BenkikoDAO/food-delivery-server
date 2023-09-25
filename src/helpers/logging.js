@@ -1,7 +1,7 @@
-import { createLogger, format, transports } from "winston"
-import winstonMongoDB from "winston-mongodb";
 import dotenv from 'dotenv'
 dotenv.config()
+import { createLogger, format, transports } from "winston"
+import winstonMongoDB from "winston-mongodb";
 
 const logger = createLogger({
   level: "info",
