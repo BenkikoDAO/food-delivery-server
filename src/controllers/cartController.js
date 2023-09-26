@@ -115,15 +115,15 @@ export async function getCartItems(req, res) {
       // Cart items not found in cache, fetch them from the database
       const cartItems = await Cart.find({ customerId: customerId });
 
-      if (!cartItems || cartItems.length === 0) {
-        res.status(400);
-        throw new Error("Cart is empty");
-      } else {
+      // if (!cartItems || cartItems.length === 0) {
+      //   res.status(400);
+      //   throw new Error("Cart is empty");
+      // } else {
         // Cache the fetched cart items in Redis for future use
         // await redisClient.setEx(redisKey, 3600, JSON.stringify(cartItems)); // Cache for 1 hour (adjust as needed)
 
         res.status(200).json(cartItems);
-      }
+      
     // }
   } catch (error) {
     // logger.error("Cannot get cart items for this customer", error);
