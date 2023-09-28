@@ -70,9 +70,9 @@ export async function createVendor(req, res) {
       !phoneNumber ||
       !latitude ||
       !longitude ||
-      !cuisine ||
-      !businessRegNo ||
-      !HealthCertNo
+      !cuisine
+      // !businessRegNo ||
+      // !HealthCertNo
     ) {
       logger.error("Missing required fields for creating vendor");
       return res
@@ -96,8 +96,8 @@ export async function createVendor(req, res) {
       latitude,
       longitude,
       locationName,
-      HealthCertNo,
-      businessRegNo,
+      // HealthCertNo,
+      // businessRegNo,
       rating,
       cuisine,
       businessLogo: result.secure_url,
@@ -121,8 +121,8 @@ export async function createVendor(req, res) {
       locationName: savedVendor.locationName,
       rating: savedVendor.rating,
       cuisine: savedVendor.cuisine,
-      businessRegNo: savedVendor.businessRegNo,
-      businessRegNo: savedVendor.HealthCertNo,
+      // businessRegNo: savedVendor.businessRegNo,
+      // HealthCertNo: savedVendor.HealthCertNo,
       token: generateToken(savedVendor.id),
       sessionId,
       fcmToken: savedVendor.fcmToken,
@@ -244,9 +244,9 @@ export async function loginVendor(req, res) {
         email: user.email,
         location: user.location,
         phoneNumber: user.phoneNumber,
-        openingHours: user.openingHours,
-        closingHours: user.closingHours,
-        businessRegistration: user.businessRegistration,
+        // openingHours: user.openingHours,
+        // closingHours: user.closingHours,
+        // businessRegistration: user.businessRegistration,
         paymail: user.paymail,
         secretKey: user.secretKey,
         publicKey: user.publicKey,
