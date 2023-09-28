@@ -4,7 +4,7 @@ services:
     build: .
     env_file:
       - .env
-    image: millxn/mobile-eats
+    image: millxn/mobile-eats:latest
     ports:
       - "5000:5000"
     environment:
