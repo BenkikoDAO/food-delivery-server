@@ -2,6 +2,8 @@ import express from "express"
 import http from 'http'
 import morgan from "morgan"
 import bodyParser from "body-parser";
+import admin from "firebase-admin";
+import { readFileSync } from "fs";
 import dotenv from 'dotenv';
 import helmet from 'helmet'
 import cors from 'cors';
@@ -75,6 +77,13 @@ wss.on('connection', (ws, req) => {
 
 // Store the WebSocket server instance in the Express app
 app.set('wss', wss);
+
+const serviceAccountPath = process.env.FCM_SERVICE_ACCOUNT;
+const serviceAccountText = readFileSync(serviceAccountPath, 'utf-8');
+const serviceAccount = JSON.parse(serviceAccountText);
+admin.initializeApp({
+  credential: admin.credential.cert(serviceAccount),
+});
 
   app.use("/api/v1/customer-auth", customerRoute)
   app.use("/api/v1/rider-auth", riderRoute)
