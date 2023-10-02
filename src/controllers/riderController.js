@@ -327,7 +327,7 @@ export const requestResetPassword = async (req, res) => {
       expiresIn: "1h",
     }); // Generate the reset token
 
-    const resetLink = `${clientUrl}/reset-password?token=${resetToken}`;
+    const resetLink = `${clientUrl}/rider/reset-password?token=${resetToken}\n\n This link expires in an hour`;
 
     const msg = {
       to: email,

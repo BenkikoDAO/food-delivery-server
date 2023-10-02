@@ -112,7 +112,7 @@ export const requestResetPassword = async (req, res) => {
       expiresIn: "1h",
     }); // Generate the reset token
 
-    const resetLink = `${clientUrl}/reset-password?token=${resetToken}`; //remember to change this to a client side route with the form to reset credentials
+    const resetLink = `${clientUrl}/customer/reset-password?token=${resetToken}`; //remember to change this to a client side route with the form to reset credentials
 
     const msg = {
       to: email,
