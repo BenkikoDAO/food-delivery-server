@@ -3,10 +3,6 @@ import http from "http";
 import morgan from "morgan";
 import bodyParser from "body-parser";
 import admin from "firebase-admin";
-import {
-  SecretsManagerClient,
-  GetSecretValueCommand,
-} from "@aws-sdk/client-secrets-manager";
 import dotenv from "dotenv";
 import helmet from "helmet";
 import cors from "cors";
@@ -22,7 +18,7 @@ import orderRoute from "./routes/orderRoute.js";
 import ratingRoute from "./routes/ratingRoute.js";
 import cartRoute from "./routes/cartRoute.js";
 import paymentCallback from "./routes/paymentRoute.js";
-import WebSocket, { WebSocketServer } from "ws";
+import { WebSocketServer } from "ws";
 import { redisDisconnect, redisConnect } from "./helpers/redisClient.js";
 
 const app = express();
@@ -85,26 +81,8 @@ wss.on("connection", (ws, req) => {
 
 // Store the WebSocket server instance in the Express app
 app.set("wss", wss);
-const secret_name = "FCM_SERVICE_ACCOUNT";
 
-const client = new SecretsManagerClient({
-  region: "us-east-2",
-});
-
-let response;
-
-try {
-  response = await client.send(
-    new GetSecretValueCommand({
-      SecretId: secret_name,
-      VersionStage: "AWSCURRENT",
-    })
-  );
-} catch (error) {
-  throw error;
-}
-
-const secret = response.SecretString;
+const secret = process.env.FCM_SERVICE_ACCOUNT
 admin.initializeApp({
   credential: admin.credential.cert(JSON.parse(secret)),
 });
