@@ -1,5 +1,6 @@
 import Rider from "../models/rider.js";
 import Vendor from "../models/vendor.js";
+import admin from 'firebase-admin'
 import Notification from "../models/notifications.js";
 import Order from "../models/order.js";
 import bcrypt from "bcrypt";
@@ -11,6 +12,7 @@ import multer from "multer";
 import dotenv from "dotenv";
 import redisClient from "../helpers/redisClient.js";
 dotenv.config();
+
 const clientUrl = process.env.CLIENT_URL;
 
 const storage = multer.diskStorage({
@@ -90,7 +92,7 @@ export async function createRider(req, res) {
 
 export async function loginRider(req, res) {
   try {
-    const { email, password } = req.body;
+    const { email, password, fcmToken } = req.body;
 
     if (!email || !password) {
       res.status(400);
@@ -102,7 +104,12 @@ export async function loginRider(req, res) {
     if (user && (await bcrypt.compare(password, user.password))) {
       // Generate a token for the user
       const token = generateToken(user._id);
+      if (user.fcmToken) {
+        user.fcmToken = undefined;
+      }
+      user.fcmToken = fcmToken;
 
+      await user.save()
       res.status(200).json({
         _id: user._id,
         vendorID: user.vendorID,
@@ -118,6 +125,7 @@ export async function loginRider(req, res) {
         licensePlate: user.licensePlate,
         licenseExpiry: user.licenseExpiry,
         token,
+        fcmToken: user.fcmToken
       });
     } else {
       res.status(400);
@@ -218,6 +226,24 @@ export async function updateRider(req, res) {
               order: order,
             };
             riderWebsocket.send(JSON.stringify(notificationPayload));
+          }
+          if(rider.fcmToken){
+          const notificationMessage = `You have been assigned a new order - Order No #${order.orderNumber} from a vendor. Check the order details on the dashboard and deliver the dishes to customer.`;
+                  
+            const message = {
+              notification: {
+                title: "New Order",
+                body: notificationMessage,
+              },
+              token: rider.fcmToken, // Rider's FCM token
+            };
+      
+            try {
+              await admin.messaging().send(message);
+              console.log("Push notification sent to rider:", rider.email);
+            } catch (error) {
+              console.error("Error sending push notification:", error);
+            }
           }
         } else {
           // Handle the case where the order already exists in the array
