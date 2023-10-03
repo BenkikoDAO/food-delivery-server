@@ -3,7 +3,7 @@ import multer from "multer";
 import { v2 as cloudinary } from "cloudinary";
 import logger from "../helpers/logging.js";
 import redisClient from "../helpers/redisClient.js";
-import Rating from '../models/rating.js'
+import Rating from "../models/rating.js";
 dotenv.config();
 
 import Vendor from "../models/vendor.js";
@@ -382,18 +382,18 @@ export async function getVendors(req, res) {
     //   // Data found in cache, send it as a response
     //   res.status(200).json(JSON.parse(cachedData));
     // } else {
-      // Data not found in cache, fetch it from the database
-      const vendors = await Vendor.find();
+    // Data not found in cache, fetch it from the database
+    const vendors = await Vendor.find();
 
-      if (!vendors || vendors.length === 0) {
-        res.status(400);
-        throw new Error("Couldn't find any vendors");
-      } else {
-        // Cache the fetched data in Redis for future use
-        // await redisClient.setEx(redisKey, 3600, JSON.stringify(vendors)); // Cache for 1 hour (adjust as needed)
+    if (!vendors || vendors.length === 0) {
+      res.status(400);
+      throw new Error("Couldn't find any vendors");
+    } else {
+      // Cache the fetched data in Redis for future use
+      // await redisClient.setEx(redisKey, 3600, JSON.stringify(vendors)); // Cache for 1 hour (adjust as needed)
 
-        res.status(200).json(vendors);
-      }
+      res.status(200).json(vendors);
+    }
     // }
   } catch (error) {
     res.status(400).json({ message: "Couldn't find any vendors" });
@@ -424,38 +424,29 @@ export async function addRider(req, res) {
         .json({ error: "Rider is already associated with this vendor" });
     }
 
-    const newRider = await Rider.create({
-      name,
-      email,
-      phoneNumber,
-      image: result.secure_url,
-      availability,
-    });
-
-    const riderInfo = {
-      riderId: newRider._id,
-      name: newRider.name,
-      phoneNumber: newRider.phoneNumber,
-      email: newRider.email,
-      image: newRider.image,
-      availability: newRider.availability,
-    };
-    vendor.riders.push(riderInfo);
-    await vendor.save();
-    logger.info("Rider added successfully");
-
+    const rider = await Rider.findOne({ email });
     sgMail.setApiKey(process.env.SENDGRID_APIKEY);
-    const confirmToken = jwt.sign({ riderInfo }, process.env.JWT_SECRET, {
-      expiresIn: "1h",
-    });
-    const confirmLink = `${clientUrl}/rider/${newRider._id}/${confirmToken}/${vendor._id}`;
-    const msg = {
-      to: email,
-      from: "Mobileeatbyosumo@gmail.com", //remember to change this to the official client side email
-      subject: "Invite to join Mobile-eats as a rider",
-      text: `You have been invited to offer food delivery services on Mobile Eats platform by ${vendor.name}.\nClick the link below to complete your account creation. \n${confirmLink}\n\n This link expires in an hour`,
-    };
-    sgMail
+
+    if (rider) {
+      const riderInfo = {
+        riderId: rider._id,
+        name: rider.name,
+        phoneNumber: rider.phoneNumber,
+        email: rider.email,
+        image: rider.image,
+        availability: rider.availability,
+      };
+      vendor.riders.push(riderInfo);
+      await vendor.save();
+      logger.info("Rider added successfully");
+
+      const msg = {
+        to: email,
+        from: "Mobileeatbyosumo@gmail.com", //remember to change this to the official client side email
+        subject: "New vendor added you on mobile eat 🎊",
+        text: `You have been added by ${vendor.name} as their rider on Mobile eat`
+      };
+      sgMail
       .send(msg)
       .then(() => {
         logger.info(`Email sent successfully to ${riderInfo.email}`);
@@ -468,13 +459,57 @@ export async function addRider(req, res) {
           error
         );
       });
-
-    res
-      .status(200)
-      .json({
-        message:
-          "New rider added to the vendor's riders successfully and email sent",
+    } else {
+      const newRider = await Rider.create({
+        name,
+        email,
+        phoneNumber,
+        image: result.secure_url,
+        availability,
       });
+
+      const riderInfo = {
+        riderId: newRider._id,
+        name: newRider.name,
+        phoneNumber: newRider.phoneNumber,
+        email: newRider.email,
+        image: newRider.image,
+        availability: newRider.availability,
+      };
+
+      vendor.riders.push(riderInfo);
+      await vendor.save();
+      logger.info("Rider added successfully");
+
+      const confirmToken = jwt.sign({ riderInfo }, process.env.JWT_SECRET, {
+        expiresIn: "1h",
+      });
+      const confirmLink = `${clientUrl}/rider/${newRider._id}/${confirmToken}/${vendor._id}`;
+      const msg = {
+        to: email,
+        from: "Mobileeatbyosumo@gmail.com", //remember to change this to the official client side email
+        subject: "Invite to join Mobile-eats as a rider",
+        text: `You have been invited to offer food delivery services on Mobile Eats platform by ${vendor.name}.\nClick the link below to complete your account creation. \n${confirmLink}\n\n This link expires in an hour`,
+      };
+      sgMail
+        .send(msg)
+        .then(() => {
+          logger.info(`Email sent successfully to ${riderInfo.email}`);
+          // res.status(200).json({ message: `Email sent successfully to ${riderInfo.email}` });
+        })
+        .catch((error) => {
+          // res.status(400).json({ error: "Failed to send email to rider" });
+          logger.error(
+            `Failed to send email to rider - ${riderInfo.email}`,
+            error
+          );
+        });
+    }
+
+    res.status(200).json({
+      message:
+        "New rider added to the vendor's riders successfully and email sent",
+    });
   } catch (error) {
     logger.error("Rider you tried to add was not found: ", error);
     res.status(500).json({ message: "Rider not found!" });
@@ -588,12 +623,10 @@ export async function editRider(req, res) {
     // Save the updated vendor document to the database
     logger.info("Rider updated successfully");
 
-    res
-      .status(200)
-      .json({
-        message: "Rider updated successfully",
-        rider: vendor.riders[riderIndex],
-      });
+    res.status(200).json({
+      message: "Rider updated successfully",
+      rider: vendor.riders[riderIndex],
+    });
   } catch (error) {
     // Handle the error, e.g., return an error response to the client
     logger.error("There was an error updating rider: ", error);
@@ -614,7 +647,7 @@ export async function deleteRider(req, res) {
 
     // Check if the vendor has the rider in their riders array
     const riderIndex = vendor.riders.findIndex(
-      (riderInfo) => riderInfo.id.toString() === riderId
+      (riderInfo) => riderInfo.riderId.toString() === riderId
     );
 
     if (riderIndex === -1) {
