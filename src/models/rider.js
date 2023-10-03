@@ -55,6 +55,9 @@ const riderSchema = new mongoose.Schema({
   },
   order:{
     type:Array
+  },
+  fcmToken:{
+    type: String
   }
 });
 
