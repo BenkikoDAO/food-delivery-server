@@ -6,14 +6,7 @@ import Vendor from "../models/vendor.js";
 import logger from "../helpers/logging.js";
 import Cart from "../models/cart.js";
 import Notification from "../models/notifications.js";
-import Customer from "../models/customer.js";
 dotenv.config();
-// const fcmServiceAccountJson = process.env.FCM_SERVICE_ACCOUNT;
-// Parse the JSON string to a JSON object
-// const serviceAccount = process.env.FCM_SERVICE_ACCOUNT;
-// admin.initializeApp({
-//   credential: admin.credential.cert(JSON.parse(serviceAccount)),
-// });
 
 export async function createOrder(req, res) {
   const { customerId, vendorNames } = req.body;
@@ -26,7 +19,11 @@ export async function createOrder(req, res) {
   const notifications = [];
   // Get the WebSocket server instance
   const wss = req.app.get("wss");
+  const processedVendors = new Set(); 
   for (const vendorName of vendorNames) {
+    if (processedVendors.has(vendorName)) {
+      continue; // Skip this vendor if already processed
+    }
     const vendor = await Vendor.findOne({ name: vendorName });
 
     if (!vendor) {
@@ -74,6 +71,26 @@ export async function createOrder(req, res) {
       };
       vendorWebSocket.send(JSON.stringify(notificationPayload));
     }
+    if(vendor.fcmToken){
+      const notificationMessage = `You have received a new order - Order No #${order.orderNumber} from a customer. Check the order details on the dashboard and prepare the delicious dishes for delivery.`;
+
+      const message = {
+        notification: {
+          title: "New Order",
+          body: notificationMessage,
+        },
+        token: vendor.fcmToken, // Vendor's FCM token
+      };
+
+      try {
+        await admin.messaging().send(message);
+        console.log("Push notification sent to vendor:", vendor.name);
+      } catch (error) {
+        console.error("Error sending push notification:", error);
+      }
+
+      processedVendors.add(vendorName);
+    }
   }
 
   if (orders.length === 0) {
@@ -82,7 +99,6 @@ export async function createOrder(req, res) {
   }
   res.status(200).json(orders);
 }
-
 export async function getOrdersByVendor(req, res) {
   try {
     const { vendorName } = req.query; // Use req.query to get query parameters
@@ -138,7 +154,7 @@ export async function updateOrderStatus(req, res) {
 export async function getOrdersByCustomer(req, res) {
   try {
     const customerId = req.params.customerId;
-    const orders = await Order.find({ customerId: customerId });
+    const orders = await Order.find({ customerId });
 
     res.status(200).json(orders);
   } catch (error) {
