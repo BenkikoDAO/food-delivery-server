@@ -11,6 +11,7 @@ export async function addCartItem(req, res) {
     const { customerId, itemId, quantity, deliveryFee } = req.body;
     const cartItem = await Menu.findById(itemId);
     const customer = await Customer.findById(customerId);
+    const redisKey = `cartItems:${customerId}`;
 
     if (!cartItem) {
       res.status(400).json({ error: "This item does not exist on the menu" });
@@ -46,6 +47,9 @@ export async function addCartItem(req, res) {
       image: cartItem.image,
     }); //save the item
     const savedItem = await item.save();
+    //get customer cart and save in cache
+    const customerCart = await Cart.find({ customerId })
+    await redisClient.set(redisKey, JSON.stringify(customerCart));
 
     res.status(201).json(savedItem);
     logger.info(`Cart item added by: ${savedItem.customer}`);
@@ -60,9 +64,10 @@ export async function addCartItem(req, res) {
 export async function updateCart(req, res) {
   try {
     const cartItemId = req.params.id;
-    const redisKey = `cartItems:${cartItemId}`;
 
     const cartItem = await Cart.findById(cartItemId);
+    const redisKey = `cartItems:${cartItem.customerId}`;
+
     if (!cartItem) {
       res.status(400).json({ error: "Cart item does not exist" });
       return; // Exit the function early if the cart item is not found
@@ -70,10 +75,14 @@ export async function updateCart(req, res) {
 
     // Update the cart item data
     cartItem.description += " & " + req.body.extraNote;
-    const updatedCartItem = await Cart.findByIdAndUpdate(cartItemId, req.body, { new: true });
+    const updatedCartItem = await Cart.findByIdAndUpdate(cartItemId, req.body, {
+      new: true,
+    });
+
+    const customerCart = await Cart.find({ customerId: cartItem.customerId })
 
     // Update the item in the Redis cache
-    await redisClient.set(redisKey, JSON.stringify(updatedCartItem));
+    await redisClient.set(redisKey, JSON.stringify(customerCart));
 
     res.status(200).json(updatedCartItem);
   } catch (error) {
@@ -83,8 +92,9 @@ export async function updateCart(req, res) {
 export async function updateExtraNote(req, res) {
   try {
     const cartItemId = req.params.id;
-    const redisKey = `cartItems:${cartItemId}`;
     const cartItem = await Cart.findById(cartItemId);
+    const redisKey = `cartItems:${cartItem.customerId}`;
+
     if (!cartItem) {
       return res.status(400).json({ error: "Cart item does not exist" });
     }
@@ -92,7 +102,9 @@ export async function updateExtraNote(req, res) {
     cartItem.description += " & " + req.body.extraNote;
     const updatedProduct = await cartItem.save();
     logger.info("Extra note added successfully");
-    await redisClient.set(redisKey, JSON.stringify(updatedProduct))
+    //find the customer's cart and update it in the cache
+    const customerCart = await Cart.find({ customerId: cartItem.customerId })
+    await redisClient.set(redisKey, JSON.stringify(customerCart));
 
     res.status(200).json(updatedProduct);
   } catch (error) {
@@ -103,28 +115,21 @@ export async function updateExtraNote(req, res) {
 export async function getCartItems(req, res) {
   try {
     const customerId = req.params.id;
-    // const redisKey = `cartItems:${customerId}`;
+    const redisKey = `cartItems:${customerId}`;
 
-    // // Attempt to retrieve cart items from Redis
-    // const cachedData = await redisClient.get(redisKey);
+    // Attempt to retrieve cart items from cache
+    const cachedData = await redisClient.get(redisKey);
 
-    // if (cachedData) {
-    //   // Cart items found in cache, send them as a response
-    //   res.status(200).json(JSON.parse(cachedData));
-    // } else {
+    if (cachedData) {
+      // Cart items found in cache, send them as a response
+      res.status(200).json(JSON.parse(cachedData));
+    } else {
       // Cart items not found in cache, fetch them from the database
-      const cartItems = await Cart.find({ customerId: customerId });
-
-      // if (!cartItems || cartItems.length === 0) {
-      //   res.status(400);
-      //   throw new Error("Cart is empty");
-      // } else {
-        // Cache the fetched cart items in Redis for future use
-        // await redisClient.setEx(redisKey, 3600, JSON.stringify(cartItems)); // Cache for 1 hour (adjust as needed)
-
-        res.status(200).json(cartItems);
-      
-    // }
+      const cartItems = await Cart.find({ customerId });
+      // Cache the fetched cart items in Redis for future use
+      await redisClient.set(redisKey, JSON.stringify(cartItems));
+      res.status(200).json(cartItems);
+    }
   } catch (error) {
     // logger.error("Cannot get cart items for this customer", error);
     res.status(400).json({ message: "Cart is empty" });
@@ -133,30 +138,39 @@ export async function getCartItems(req, res) {
 export async function deleteItem(req, res) {
   try {
     const itemId = req.params.id;
-    const redisKey = `cartItems:${itemId}`;
 
     const item = await Cart.findById(itemId);
+    const redisKey = `cartItems:${item.customerId}`;
+
     if (!item) {
       res.status(400).json("Item not found");
       return; // Exit the function early if item not found
     }
     await Cart.findByIdAndDelete(itemId);
-
-    // Remove the deleted item from the cache
-    await redisClient.del(redisKey);
-
     res.status(200).json({ message: "Item deleted" });
+
+    const cachedCart = await redisClient.get(redisKey)
+    if (cachedCart) {
+      const parsedCart = JSON.parse(cachedCart);
+      // Remove the deleted item from the cached cart
+      const updatedCart = parsedCart.filter(item => item._id !== itemId);
+
+      // Update the cached cart
+      await redisClient.set(redisKey, JSON.stringify(updatedCart));
+    }
   } catch (error) {
+    console.log(error)
     res
       .status(400)
       .json({ message: "An error occurred when deleting the cart item" });
   }
 }
 
-export async function clearCart(req, res){
+export async function clearCart(req, res) {
   try {
     const customerId = req.params.customerId;
-
+    const redisKey = `cartItems:${customerId}`;
+    
     // Find and delete all cart items for the specified customerId
     const result = await Cart.deleteMany({ customerId: customerId });
 
@@ -165,6 +179,9 @@ export async function clearCart(req, res){
     } else {
       res.status(200).json({ message: "Cart items deleted" });
     }
+    const customerCart = await Cart.find({ customerId })
+    await redisClient.set(redisKey, JSON.stringify(customerCart));
+
   } catch (error) {
     logger.error("An error occurred when deleting cart items: ", error);
     res
@@ -174,10 +191,30 @@ export async function clearCart(req, res){
 }
 
 export async function calcDeliveryFee(req, res) {
-  const { longitude, latitude, vendorNames, customerId, orderTime, orderDate, streetAddress, street } = req.body;
-  if (!latitude || !longitude || !vendorNames || !orderTime || ! orderDate || ! streetAddress || !customerId || !street) {
-    logger.error('Enter all required fields to calculate fee')
-    return res.status(400).json('Enter all the required fields!');
+  const {
+    longitude,
+    latitude,
+    vendorNames,
+    customerId,
+    orderTime,
+    orderDate,
+    streetAddress,
+    street,
+  } = req.body;
+  const redisKey = `cartItems:${customerId}`;
+
+  if (
+    !latitude ||
+    !longitude ||
+    !vendorNames ||
+    !orderTime ||
+    !orderDate ||
+    !streetAddress ||
+    !customerId ||
+    !street
+  ) {
+    logger.error("Enter all required fields to calculate fee");
+    return res.status(400).json("Enter all the required fields!");
   }
   try {
     const vendorCoordinates = {};
@@ -220,30 +257,37 @@ export async function calcDeliveryFee(req, res) {
         //rounds to the next multiple of 5
         const roundedDeliveryFee = Math.ceil(deliveryFee / 5) * 5;
         // Store the delivery fee for each vendor
-        vendorDeliveryFees[vendorName] = parseFloat(roundedDeliveryFee.toFixed(0));
+        vendorDeliveryFees[vendorName] = parseFloat(
+          roundedDeliveryFee.toFixed(0)
+        );
       }
     }
 
     // Update cart items with delivery fees
     const cartItems = await Cart.find({ customerId: customerId });
-    
+
     for (const cartItem of cartItems) {
       if (vendorDeliveryFees.hasOwnProperty(cartItem.vendorName)) {
         cartItem.deliveryFee = vendorDeliveryFees[cartItem.vendorName];
         cartItem.orderTime = orderTime;
         cartItem.orderDate = orderDate;
         cartItem.streetAddress = streetAddress;
-        cartItem.longitude = longitude,
-        cartItem.latitude = latitude,
-        cartItem.street = street
+        (cartItem.longitude = longitude),
+          (cartItem.latitude = latitude),
+          (cartItem.street = street);
+        //update the cart item
         await cartItem.save();
+        //update the item in cache
+        const customerCart = await Cart.find({ customerId: cartItem.customerId })
+
+        await redisClient.set(redisKey, JSON.stringify(customerCart));
       }
       // console.log(cartItem);
     }
 
     res.status(200).json({ vendorDeliveryFees });
   } catch (error) {
-    console.error('Error calculating delivery fee:', error);
-    res.status(500).json('An error occurred while calculating delivery fee.');
+    console.error("Error calculating delivery fee:", error);
+    res.status(500).json("An error occurred while calculating delivery fee.");
   }
 }
