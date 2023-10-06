@@ -3,17 +3,14 @@ import multer from "multer";
 import { v2 as cloudinary } from "cloudinary";
 import logger from "../helpers/logging.js";
 import redisClient from "../helpers/redisClient.js";
-import Rating from "../models/rating.js";
 dotenv.config();
 
 import Vendor from "../models/vendor.js";
 import Rider from "../models/rider.js";
 import bcrypt from "bcrypt";
 import sgMail from "@sendgrid/mail";
-// import NodeGeocoder from "node-geocoder";
 import jwt from "jsonwebtoken";
 const bcryptSalt = process.env.BCRYPT_SALT;
-// const openCageApi = process.env.OPENCAGE_GEOCODING_API_KEY
 const clientUrl = process.env.CLIENT_URL;
 
 const options = {
