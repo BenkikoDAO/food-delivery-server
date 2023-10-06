@@ -174,8 +174,8 @@ export async function clearCart(req, res){
 }
 
 export async function calcDeliveryFee(req, res) {
-  const { longitude, latitude, vendorNames, customerId, deliveryTime, deliveryDate, streetAddress, street } = req.body;
-  if (!latitude || !longitude || !vendorNames || !deliveryTime || ! deliveryDate || ! streetAddress || !customerId || !street) {
+  const { longitude, latitude, vendorNames, customerId, orderTime, orderDate, streetAddress, street } = req.body;
+  if (!latitude || !longitude || !vendorNames || !orderTime || ! orderDate || ! streetAddress || !customerId || !street) {
     logger.error('Enter all required fields to calculate fee')
     return res.status(400).json('Enter all the required fields!');
   }
@@ -230,8 +230,8 @@ export async function calcDeliveryFee(req, res) {
     for (const cartItem of cartItems) {
       if (vendorDeliveryFees.hasOwnProperty(cartItem.vendorName)) {
         cartItem.deliveryFee = vendorDeliveryFees[cartItem.vendorName];
-        cartItem.deliveryTime = deliveryTime;
-        cartItem.deliveryDate = deliveryDate;
+        cartItem.orderTime = orderTime;
+        cartItem.orderDate = orderDate;
         cartItem.streetAddress = streetAddress;
         cartItem.longitude = longitude,
         cartItem.latitude = latitude,

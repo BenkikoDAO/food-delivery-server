@@ -65,10 +65,10 @@ const cartSchema = new mongoose.Schema(
     longitude: {
       type: Number,
     },
-    deliveryDate: {
+    orderDate: {
       type: String,
     },
-    deliveryTime: {
+    orderTime: {
       type: String,
     },
     deliveryFee: {
