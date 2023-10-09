@@ -68,8 +68,6 @@ export async function createRider(req, res) {
         availability,
       });
       const savedRider = await newRider.save();
-      const redisKey = `rider:${savedRider._id}`;
-      await redisClient.setEx(redisKey, 3600, JSON.stringify(savedRider)); // Cache for 1 hour (adjust as needed)
 
       res.status(201).json({
         _id: savedRider.id,
@@ -139,7 +137,6 @@ export async function loginRider(req, res) {
 
 export async function updateRider(req, res) {
   const riderId = req.params.id;
-  const redisKey = `rider${riderId}`;
   const rider = await Rider.findById(riderId);
 
   const wss = req.app.get("wss");
@@ -297,7 +294,9 @@ export async function updateRider(req, res) {
         arrayFilters: [{ "rider.riderId": riderId }],
       }
     );
-    await redisClient.setEx(redisKey, 3600, JSON.stringify(updatedRider));
+    // await redisClient.setEx(redisKey, 3600, JSON.stringify(updatedRider));
+    const vendors = await Vendor.find()
+    await redisClient.set("vendors", JSON.stringify(vendors));
 
     res.status(200).json(updatedRider);
   }
@@ -482,7 +481,6 @@ export async function getRiders(req, res) {
 export async function deleteRider(req, res) {
   try {
     const riderId = req.params.id;
-    const redisKey = `rider:${riderId}`;
 
     const rider = await Rider.findById(req.params.id);
     if (!rider) {
@@ -490,7 +488,6 @@ export async function deleteRider(req, res) {
       throw new Error("Rider not found ");
     } else {
       await Rider.findByIdAndDelete(req.params.id);
-      redisClient.del(redisKey);
 
       res.status(200).json({ id: req.params.id, message: "Rider deleted" });
     }
@@ -505,5 +502,3 @@ const generateToken = (id) => {
     expiresIn: "1d",
   });
 };
-
-// export default { createRider, loginRider, resetPassword, updatePassword, getRider, getRiders }

@@ -68,8 +68,6 @@ export async function createVendor(req, res) {
       !latitude ||
       !longitude ||
       !cuisine
-      // !businessRegNo ||
-      // !HealthCertNo
     ) {
       logger.error("Missing required fields for creating vendor");
       return res
@@ -103,8 +101,9 @@ export async function createVendor(req, res) {
     // Save the customer to the database
     const savedVendor = await newVendor.save();
     logger.info("Vendor created successfully");
-    const redisKey = `vendor:${savedVendor._id}`;
-    await redisClient.setEx(redisKey, 3600, JSON.stringify(savedVendor)); // Cache for 1 hour (adjust as needed)
+    const redisKey = "vendors";
+    const vendors = await Vendor.find();
+    await redisClient.set(redisKey, JSON.stringify(vendors)); // Cache for 1 hour (adjust as needed)
 
     const sessionId = req.session.id;
 
@@ -202,10 +201,12 @@ export async function updateVendor(req, res) {
         },
         { new: true }
       );
-      await redisClient.setEx(redisKey, 3600, JSON.stringify(updatedVendor)); // Cache for 1 hour (adjust as needed)
 
       logger.info("Vendor has been updated successfully");
       res.status(200).json(updatedVendor);
+      // update vendors in cache
+      const vendors = await Vendor.find();
+      await redisClient.set(redisKey, JSON.stringify(vendors));
     }
   } catch (error) {
     logger.error(error);
@@ -340,29 +341,26 @@ export async function changePassword(req, res) {
 export async function getVendor(req, res) {
   try {
     const vendorId = req.params.id;
-    // const redisKey = `vendor:${vendorId}`;
-
+    const redisKey = "vendors";
     // Attempt to retrieve data from Redis
-    // const cachedData = await redisClient.get(redisKey);
+    const cachedData = await redisClient.get(redisKey);
 
-    // if (cachedData) {
-    //   // Data found in cache, send it as a response
-    //   res.status(200).json(JSON.parse(cachedData));
-    // }
-    // else {
-    // Data not found in cache, fetch it from the database
-    const vendor = await Vendor.findById(vendorId);
-
-    if (!vendor) {
-      res.status(400);
-      throw new Error("This vendor does not exist");
-    } else {
-      // Cache the fetched data in Redis for future use
-      // await redisClient.setEx(redisKey, 3600, JSON.stringify(vendor)); // Cache for 1 hour (adjust as needed)
-
+    if (cachedData) {
+      // Data found in cache, send it as a response
+      const parsedData = JSON.parse(cachedData);
+      const vendor = parsedData.find((item) => item._id === req.params.id);
       res.status(200).json(vendor);
+    } else {
+      // Data not found in cache, fetch it from the database
+      const vendor = await Vendor.findById(vendorId);
+
+      if (!vendor) {
+        res.status(400);
+        throw new Error("This vendor does not exist");
+      } else {
+        res.status(200).json(vendor);
+      }
     }
-    // }
   } catch (error) {
     res.status(400).json({ message: "This vendor does not exist" });
   }
@@ -373,25 +371,19 @@ export async function getVendors(req, res) {
     const redisKey = "vendors";
 
     // // Attempt to retrieve data from Redis
-    // const cachedData = await redisClient.get(redisKey);
+    const cachedData = await redisClient.get(redisKey);
 
-    // if (cachedData) {
-    //   // Data found in cache, send it as a response
-    //   res.status(200).json(JSON.parse(cachedData));
-    // } else {
-    // Data not found in cache, fetch it from the database
-    const vendors = await Vendor.find();
-
-    if (!vendors || vendors.length === 0) {
-      res.status(400);
-      throw new Error("Couldn't find any vendors");
+    if (cachedData) {
+      // Data found in cache, send it as a response
+      res.status(200).json(JSON.parse(cachedData));
     } else {
+      // Data not found in cache, fetch it from the database
+      const vendors = await Vendor.find();
       // Cache the fetched data in Redis for future use
-      // await redisClient.setEx(redisKey, 3600, JSON.stringify(vendors)); // Cache for 1 hour (adjust as needed)
+      await redisClient.set(redisKey, JSON.stringify(vendors));
 
       res.status(200).json(vendors);
     }
-    // }
   } catch (error) {
     res.status(400).json({ message: "Couldn't find any vendors" });
     console.error("Error getting vendors:", error);
@@ -401,6 +393,7 @@ export async function getVendors(req, res) {
 export async function addRider(req, res) {
   try {
     const { name, email, phoneNumber, availability } = req.body;
+    const redisKey = "vendors";
     const image = req.file;
     const result = await cloudinary.uploader.upload(image.path, {
       width: 500,
@@ -436,26 +429,28 @@ export async function addRider(req, res) {
       vendor.riders.push(riderInfo);
       await vendor.save();
       logger.info("Rider added successfully");
+      const vendors = await Vendor.find();
+      await redisClient.set(redisKey, JSON.stringify(vendors));
 
       const msg = {
         to: email,
         from: "Mobileeatbyosumo@gmail.com", //remember to change this to the official client side email
         subject: "New vendor added you on mobile eat 🎊",
-        text: `You have been added by ${vendor.name} as their rider on Mobile eat`
+        text: `You have been added by ${vendor.name} as their rider on Mobile eat`,
       };
       sgMail
-      .send(msg)
-      .then(() => {
-        logger.info(`Email sent successfully to ${riderInfo.email}`);
-        // res.status(200).json({ message: `Email sent successfully to ${riderInfo.email}` });
-      })
-      .catch((error) => {
-        // res.status(400).json({ error: "Failed to send email to rider" });
-        logger.error(
-          `Failed to send email to rider - ${riderInfo.email}`,
-          error
-        );
-      });
+        .send(msg)
+        .then(() => {
+          logger.info(`Email sent successfully to ${riderInfo.email}`);
+          // res.status(200).json({ message: `Email sent successfully to ${riderInfo.email}` });
+        })
+        .catch((error) => {
+          // res.status(400).json({ error: "Failed to send email to rider" });
+          logger.error(
+            `Failed to send email to rider - ${riderInfo.email}`,
+            error
+          );
+        });
     } else {
       const newRider = await Rider.create({
         name,
@@ -477,6 +472,8 @@ export async function addRider(req, res) {
       vendor.riders.push(riderInfo);
       await vendor.save();
       logger.info("Rider added successfully");
+      const vendors = await Vendor.find();
+      await redisClient.set(redisKey, JSON.stringify(vendors));
 
       const confirmToken = jwt.sign({ riderInfo }, process.env.JWT_SECRET, {
         expiresIn: "1h",
@@ -619,6 +616,8 @@ export async function editRider(req, res) {
     ]);
     // Save the updated vendor document to the database
     logger.info("Rider updated successfully");
+    const vendors = await Vendor.find();
+    await redisClient.set(redisKey, JSON.stringify(vendors));
 
     res.status(200).json({
       message: "Rider updated successfully",
@@ -657,6 +656,8 @@ export async function deleteRider(req, res) {
     vendor.riders.splice(riderIndex, 1);
     await vendor.save();
     logger.info(`Rider removed from vendor: ${vendor.name} successfully`);
+    const vendors = await Vendor.find();
+    await redisClient.set(redisKey, JSON.stringify(vendors));
 
     res
       .status(200)
@@ -678,8 +679,9 @@ export async function deleteVendor(req, res) {
       throw new Error("Vendor not found ");
     } else {
       await Vendor.findByIdAndDelete(vendorId);
-      // Remove the vendor data from the cache
-      redisClient.del(redisKey);
+      // update cache with the new record of vendors
+      const vendors = await Vendor.find();
+      await redisClient.set(redisKey, JSON.stringify(vendors));
 
       res.status(200).json({ id: vendorId, message: "Vendor deleted" });
       logger.info(`Vendor: ${vendor.name} deleted successfully`);
