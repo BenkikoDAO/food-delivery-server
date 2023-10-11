@@ -14,10 +14,10 @@ export async function addCartItem(req, res) {
     const redisKey = `cartItems:${customerId}`;
 
     if (!cartItem) {
-      res.status(400).json({ error: "This item does not exist on the menu" });
+      return res.status(400).json({ error: "This item does not exist on the menu" });
     }
     if (!customer) {
-      res.status(400).json({ error: "This customer does not exist" });
+      return res.status(400).json({ error: "This customer does not exist" });
     }
 
     const existingCartItem = await Cart.findOne({
