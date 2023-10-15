@@ -39,8 +39,11 @@ const cartSchema = new mongoose.Schema(
     image: {
       type: String,
     },
-    extraNote: {
-      type: String,
+    extras: {
+      type: Array,
+    },
+    vendorExtras:{
+      type: Array
     },
     deliveryAddress: {
       type: {
