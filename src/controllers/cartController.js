@@ -26,11 +26,15 @@ export async function addCartItem(req, res) {
     });
 
     if (existingCartItem) {
-      return res
-        .status(400)
-        .json({ error: "This item is already in the cart" });
+      return res.status(400).json({ error: "This item is already in the cart" });
     }
 
+    const menuItem = await Menu.findById(itemId)
+
+    const items = await Menu.find({
+      vendorID: menuItem.vendorID,
+      dishType: "Extras",
+    });
     const item = new Cart({
       itemId: itemId,
       vendorName: cartItem.vendorName,
@@ -45,6 +49,7 @@ export async function addCartItem(req, res) {
       quantity: quantity,
       deliveryFee: deliveryFee,
       image: cartItem.image,
+      vendorExtras: items
     }); //save the item
     const savedItem = await item.save();
     //get customer cart and save in cache
@@ -61,6 +66,9 @@ export async function addCartItem(req, res) {
     console.log("Error adding item to cart:", error);
   }
 }
+// async function getVendorExtras(itemId){
+
+// }
 export async function updateCart(req, res) {
   try {
     const cartItemId = req.params.id;
@@ -72,9 +80,6 @@ export async function updateCart(req, res) {
       res.status(400).json({ error: "Cart item does not exist" });
       return; // Exit the function early if the cart item is not found
     }
-
-    // Update the cart item data
-    cartItem.description += " & " + req.body.extraNote;
     const updatedCartItem = await Cart.findByIdAndUpdate(cartItemId, req.body, {
       new: true,
     });
