@@ -96,8 +96,7 @@ export async function updateMenuItem(req, res) {
     const menuItem = await Menu.findById(req.params.id);
 
     if (!menuItem) {
-      res.status(400);
-      throw new Error("The menuItem you tried to update does not exist");
+      return res.status(400).json({error: "The menuItem you tried to update does not exist"})
     } else {
       const { name, description, dishType, price } = req.body;
       let image = menuItem.image;
@@ -202,8 +201,7 @@ export async function getMenuItemByVendor(req, res) {
     } else{
       const item = await Menu.find({ vendorID: req.params.vendorId });
       if (!item) {
-        res.status(400);
-        throw new Error("There are no dishes by this vendor.");
+        return res.status(400).json({error: "There are no dishes by this vendor."});
       } else {
         res.status(200).json(item);
       }
@@ -228,8 +226,7 @@ export async function getMenuItem(req, res) {
     } else {
       const item = await Menu.findById(req.params.id);
       if (!item) {
-        res.status(400);
-        throw new Error("This menu item does not exist");
+        return res.status(400).json({error: "This menu item does not exist"});
       } else {
         res.status(200).json(item);
       }
@@ -245,14 +242,12 @@ export async function deleteMenuItem(req, res) {
     const item = await Menu.findById(req.params.id);
     const redisKey = "menus"
     if (!item) {
-      res.status(404);
-      throw new Error("Item not found");
+      return res.status(404).json({error: "Item not found"});
     }
 
     const vendor = await Vendor.findById(item.vendorID);
     if (!vendor) {
-      res.status(404);
-      throw new Error("Vendor not found");
+      res.status(404).json({error: "Vendor not found"});
     }
 
     // Remove the item name from the specialties array
@@ -271,7 +266,7 @@ export async function deleteMenuItem(req, res) {
     const filteredItems = items.filter((item) => item.dishType !== "Extras");
     await redisClient.set(redisKey, JSON.stringify(filteredItems));
 
-    logger.info("Menu item deleted successfully");
+    logger.info(`Menu item - ${item.name} deleted successfully by ${vendor.name}`);
     res.status(200).json({ id: req.params.id, message: "Item deleted" });
   } catch (error) {
     logger.error("Item not found");

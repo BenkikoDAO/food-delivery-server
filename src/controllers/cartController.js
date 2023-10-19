@@ -77,8 +77,7 @@ export async function updateCart(req, res) {
     const redisKey = `cartItems:${cartItem.customerId}`;
 
     if (!cartItem) {
-      res.status(400).json({ error: "Cart item does not exist" });
-      return; // Exit the function early if the cart item is not found
+      return res.status(400).json({ error: "Cart item does not exist" });
     }
     const updatedCartItem = await Cart.findByIdAndUpdate(cartItemId, req.body, {
       new: true,
@@ -148,8 +147,7 @@ export async function deleteItem(req, res) {
     const redisKey = `cartItems:${item.customerId}`;
 
     if (!item) {
-      res.status(400).json("Item not found");
-      return; // Exit the function early if item not found
+      return res.status(400).json("Item not found");
     }
     await Cart.findByIdAndDelete(itemId);
     res.status(200).json({ message: "Item deleted" });
@@ -180,7 +178,7 @@ export async function clearCart(req, res) {
     const result = await Cart.deleteMany({ customerId: customerId });
 
     if (result.deletedCount === 0) {
-      res.status(400).json({ message: "No cart items found for the customer" });
+      return res.status(400).json({ message: "No cart items found for the customer" });
     } else {
       res.status(200).json({ message: "Cart items deleted" });
     }

@@ -6,7 +6,7 @@ import logger from "../helpers/logging.js";
 import customer from "../models/customer.js";
 
 let bcryptSalt = process.env.BCRYPT_SALT;
-const clientUrl = process.env.CLIENT_URL
+const clientUrl = process.env.CLIENT_URL;
 //Register customer
 export async function createCustomer(req, res) {
   try {
@@ -51,8 +51,9 @@ export async function loginCustomer(req, res) {
     const { email, password } = req.body;
 
     if (!email || !password) {
-      res.status(400);
-      throw new Error("Please enter all the required fields");
+      return res
+        .status(400)
+        .json({ message: "Please enter all the required fields" });
     }
 
     const user = await Customer.findOne({ email });
@@ -83,8 +84,9 @@ export async function loginCustomer(req, res) {
       });
     } else {
       logger.error("Invalid password");
-      res.status(400);
-      throw new Error("The credentials you entered are invalid");
+      return res
+        .status(400)
+        .json({ error: "The credentials you entered are invalid" });
     }
   } catch (error) {
     logger.error("Invalid login credentials");
@@ -98,8 +100,7 @@ export const requestResetPassword = async (req, res) => {
   sgMail.setApiKey(process.env.SENDGRID_APIKEY);
 
   if (!email) {
-    res.status(400).json({ error: "Please provide an email address" });
-    return;
+    return res.status(400).json({ error: "Please provide an email address" });
   }
   try {
     const user = await Customer.findOne({ email });
@@ -137,11 +138,13 @@ export const requestResetPassword = async (req, res) => {
 
 export async function changePassword(req, res) {
   const { email, password } = req.body;
-  if(!email || !password){
-    return res.status(400).json({ message: "Please enter all the required fields" });
+  if (!email || !password) {
+    return res
+      .status(400)
+      .json({ message: "Please enter all the required fields" });
   }
   const customer = await Customer.findOne({ email });
-  
+
   try {
     // Find the user by email
     const customer = await Customer.findOne({ email });
@@ -157,10 +160,10 @@ export async function changePassword(req, res) {
       { password: hashedPassword },
       { new: true }
     );
-    logger.info(`${customer.username} - changed password successfully`)
+    logger.info(`${customer.username} - changed password successfully`);
     res.status(200).json({ message: "Password changed successfully." });
   } catch (error) {
-    logger.error(`Error changing password for customer - ${customer.email}`)
+    logger.error(`Error changing password for customer - ${customer.email}`);
     res.status(500).json({ error: "Failed to change password" });
   }
 }
@@ -169,12 +172,7 @@ export async function getCustomers(req, res) {
   try {
     const customers = await Customer.find();
 
-    if (!customers) {
-      res.status(400);
-      throw new Error("There are no customers in the database");
-    } else {
-      res.status(200).json(customers);
-    }
+    res.status(200).json(customers);
   } catch (error) {
     logger.error("There are no customers yet!");
     res.status(404).json({ message: "Customers not found" });
@@ -185,8 +183,7 @@ export async function getCustomer(req, res) {
   try {
     const customer = await Customer.findById(req.params.id);
     if (!customer) {
-      res.status(400);
-      throw new Error("This customer does not exist");
+      return res.status(400).json({error: "This customer does not exist"});
     } else {
       res.status(200).json(customer);
     }

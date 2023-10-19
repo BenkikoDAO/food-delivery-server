@@ -294,7 +294,6 @@ export async function updateRider(req, res) {
         arrayFilters: [{ "rider.riderId": riderId }],
       }
     );
-    // await redisClient.setEx(redisKey, 3600, JSON.stringify(updatedRider));
     const vendors = await Vendor.find()
     await redisClient.set("vendors", JSON.stringify(vendors));
 

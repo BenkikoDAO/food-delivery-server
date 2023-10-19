@@ -137,8 +137,7 @@ export async function updateVendor(req, res) {
     const vendor = await Vendor.findById(vendorId);
     if (!vendor) {
       logger.error("The vendor does not exist");
-      res.status(400);
-      throw new Error("The vendor does not exist!");
+      return res.status(400).json({error: "The vendor does not exist!"});
     } else {
       const {
         paymail,
@@ -220,8 +219,7 @@ export async function loginVendor(req, res) {
     const { name, password, fcmToken } = req.body;
 
     if (!name || !password) {
-      res.status(400);
-      throw new Error("Please enter all the required fields");
+      return res.status(400).json({error:"Please enter all the required fields" });
     }
 
     const user = await Vendor.findOne({ name });
@@ -253,8 +251,7 @@ export async function loginVendor(req, res) {
       });
     } else {
       logger.error("Invalid login credentials");
-      res.status(400);
-      throw new Error("The credentials you entered are invalid");
+      res.status(400).json({error: "The credentials you entered are invalid"});
     }
   } catch (error) {
     logger.error("Invalid login credentials");
@@ -355,8 +352,7 @@ export async function getVendor(req, res) {
       const vendor = await Vendor.findById(vendorId);
 
       if (!vendor) {
-        res.status(400);
-        throw new Error("This vendor does not exist");
+        return res.status(400).json({error: "This vendor does not exist"})
       } else {
         res.status(200).json(vendor);
       }
