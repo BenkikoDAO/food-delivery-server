@@ -11,12 +11,10 @@ const customerProtect = async (req, res, next) => {
 
     next();
   } else {
-    res.status(401);
-    throw new Error("Unauthorized attempt");
+    return res.status(401).json({error: "unauthorized attempt"})
   }
   if (!token) {
-    res.status(401);
-    throw new Error("No authorization without token");
+    return res.status(401).json({error: "No authorization without token"})
   }
 };
 
