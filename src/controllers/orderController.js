@@ -12,14 +12,13 @@ export async function createOrder(req, res) {
   const { customerId, vendorNames } = req.body;
   const cart = await Cart.find({ customerId: customerId });
   if (!cart) {
-    res.status(404).json({ message: "This customer's cart is empty" });
-    return;
+    return res.status(404).json({ message: "This customer's cart is empty" });
   }
   const orders = [];
   const notifications = [];
   // Get the WebSocket server instance
   const wss = req.app.get("wss");
-  const processedVendors = new Set(); 
+  const processedVendors = new Set();
   for (const vendorName of vendorNames) {
     if (processedVendors.has(vendorName)) {
       continue; // Skip this vendor if already processed
@@ -30,7 +29,9 @@ export async function createOrder(req, res) {
       logger.error(`Vendor with name ${vendorName} not found`);
       continue; // Skip this vendor and move to the next one
     }
-    const vendorCartItems = cart.filter((item) => item.vendorName === vendorName);
+    const vendorCartItems = cart.filter(
+      (item) => item.vendorName === vendorName
+    );
     // Calculate the total amount for the order
     const orderTotalAmount = vendorCartItems.reduce((total, item) => {
       return total + item.price;
@@ -46,10 +47,12 @@ export async function createOrder(req, res) {
       customerCart: vendorCartItems,
       vendorName: vendor.name, // Associate the vendor's name with the order
       status: "Pending",
-      totalAmount: orderTotalAmount
+      totalAmount: orderTotalAmount,
     });
     await order.save();
     orders.push(order);
+
+    logger.info(`Order created by ${order.customerId} to vendor - ${order.vendorName}`)
 
     const notificationMessage = `You have received a new order - Order No #${order.orderNumber} from a customer. Check the order details on the dashboard and prepare the delicious dishes for delivery.`;
     const notification = new Notification({
@@ -71,7 +74,7 @@ export async function createOrder(req, res) {
       };
       vendorWebSocket.send(JSON.stringify(notificationPayload));
     }
-    if(vendor.fcmToken){
+    if (vendor.fcmToken) {
       const notificationMessage = `You have received a new order - Order No #${order.orderNumber} from a customer. Check the order details on the dashboard and prepare the delicious dishes for delivery.`;
 
       const message = {
@@ -84,9 +87,9 @@ export async function createOrder(req, res) {
 
       try {
         await admin.messaging().send(message);
-        console.log("Push notification sent to vendor:", vendor.name);
+        logger.info(`Push notification sent to ${vendor.name}`);
       } catch (error) {
-        console.error("Error sending push notification:", error);
+        logger.error(`Error sending push notification - ${error}`);
       }
 
       processedVendors.add(vendorName);
@@ -114,35 +117,45 @@ export async function getOrdersByVendor(req, res) {
 export async function orderNotification(req, res) {
   try {
     const vendorId = req.params.vendorId;
-    const notifications = await Notification.find({vendorId: vendorId})
+    const notifications = await Notification.find({ vendorId: vendorId });
     res.status(200).json(notifications);
   } catch (error) {
-    res.status(400).json({ message: "There are no notifications at this time." });
+    res
+      .status(400)
+      .json({ message: "There are no notifications at this time." });
     console.error("Error getting orders by customer:", error);
   }
 }
 
 export async function updateOrderStatus(req, res) {
   try {
-    const orderId = req.params.id;
     const { status, riderId, riderName } = req.body;
-    const order = await Order.findById(orderId);
+    const order = await Order.findById(req.params.id);
 
     if (!order) {
       return res.status(404).json({ error: "Order not found" });
     }
-    if(status){
+
+    if (order.riderId && riderId && riderId !== order.riderId) {
+      return res.status(400).json({ error: "This order is already assigned to a rider." });
+    }
+
+    //     Before updating the riderId, it checks if the order already has a riderId, and if riderId is provided in the request, it compares the new riderId with the existing one. If they are different, it returns an error indicating that the order is already assigned to a rider.
+    // This change ensures that you don't accidentally change the riderId of an order that is already assigned to a rider. If the riderId is the same as the existing one or if the order doesn't have a riderId, it proceeds with the update as before.
+
+    if (status) {
       order.status = status;
     }
 
-    if(riderId && riderName){
-      order.riderId = riderId
-      order.riderName = riderName
+    if (riderId && riderName) {
+      order.riderId = riderId;
+      order.riderName = riderName;
     }
 
     const updatedOrder = await order.save();
 
     res.status(200).json(updatedOrder);
+    // console.log(updatedOrder)
   } catch (error) {
     res
       .status(400)
@@ -191,7 +204,7 @@ export async function deleteOrder(req, res) {
 
     await Order.findByIdAndDelete(orderId);
 
-    return res.json({ message: "Order deleted successfully" });
+    res.status(200).json({ message: "Order deleted successfully" });
   } catch (error) {
     res
       .status(400)
@@ -204,10 +217,10 @@ export async function deleteOrders(req, res) {
     const vendorName = req.body.vendorName;
 
     // Find and delete all cart items for the specified customerId
-    const result = await Order.deleteMany({vendorName: vendorName});
+    const result = await Order.deleteMany({ vendorName: vendorName });
 
     if (result.deletedCount === 0) {
-      res.status(400).json({ message: "No orders found for this vendor" });
+      return res.status(400).json({ message: "No orders found for this vendor" });
     } else {
       res.status(200).json({ message: "Orders deleted" });
     }
