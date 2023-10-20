@@ -28,7 +28,7 @@ export async function createCustomer(req, res) {
 
     // Save the customer to the database
     const savedCustomer = await newCustomer.save();
-    logger.info("Customer account created: ", newCustomer.username);
+    logger.info("Customer account created: ", savedCustomer.username);
 
     const sessionId = req.session.id;
 
@@ -105,7 +105,11 @@ export const requestResetPassword = async (req, res) => {
   try {
     const user = await Customer.findOne({ email });
 
-    if (!user) throw new Error("User does not exist");
+    if (!user) {
+      return res
+        .status(400)
+        .json({ error: "An account with this email address does not exist" });
+    }
 
     const userId = user._id; // Get the user's ID
 
@@ -113,7 +117,8 @@ export const requestResetPassword = async (req, res) => {
       expiresIn: "1h",
     }); // Generate the reset token
 
-    const resetLink = `${clientUrl}/customer/reset-password?token=${resetToken}`; //remember to change this to a client side route with the form to reset credentials
+    // const resetLink = `${clientUrl}/customer/reset-password/${resetToken}`; //remember to change this to a client side route with the form to reset credentials
+    const resetLink = `${clientUrl}/customer/reset-password/${resetToken}`;
 
     const msg = {
       to: email,
@@ -124,46 +129,78 @@ export const requestResetPassword = async (req, res) => {
     sgMail
       .send(msg)
       .then(() => {
-        res.status(200).json({ message: "Reset password email sent" });
+        res.status(200).json({
+          message: "Reset password link has been sent to your email address",
+        });
       })
       .catch((error) => {
-        console.error("Error sending reset password email:", error);
-        res.status(500).json({ error: "Failed to send reset password email" });
+        logger.error("Error sending reset password email:", error);
+        res.status(400).json({ error: "Failed to send reset password email" });
       });
   } catch (error) {
-    res.status(500).json({ error: "Failed to initiate password reset" });
+    res.status(400).json({ error: "Failed to initiate password reset" });
     console.log(error);
   }
 };
 
 export async function changePassword(req, res) {
-  const { email, password } = req.body;
-  if (!email || !password) {
+  const { email, password, token } = req.body;
+
+  if (!email || !password || !token) {
     return res
       .status(400)
       .json({ message: "Please enter all the required fields" });
   }
-  const customer = await Customer.findOne({ email });
 
   try {
-    // Find the user by email
-    const customer = await Customer.findOne({ email });
-    if (!customer) {
-      return res.status(404).json({ error: "User not found" });
-    }
-    // Hash the new password
-    const hashedPassword = await bcrypt.hash(password, Number(bcryptSalt));
+    // Verify the token's authenticity
+    jwt.verify(token, process.env.JWT_SECRET, (err, decodedToken) => {
+      if (err) {
+        return res.status(401).json({ error: "Invalid or expired token" });
+      }
 
-    // Update the user's password
-    await Customer.findByIdAndUpdate(
-      customer._id,
-      { password: hashedPassword },
-      { new: true }
-    );
-    logger.info(`${customer.username} - changed password successfully`);
-    res.status(200).json({ message: "Password changed successfully." });
+      // Extract the user's ID from the decoded token
+      const userId = decodedToken.userId;
+
+      // Find the user by email
+      Customer.findOne({ email })
+        .then(async (customer) => {
+          if (!customer) {
+            return res
+              .status(404)
+              .json({ error: "Customer with this email does not exist" });
+          }
+
+          // Verify that the token's user ID matches the user's ID
+          if (customer._id.toString() !== userId) {
+            return res
+              .status(401)
+              .json({ error: "Invalid token for this user" });
+          }
+
+          // Hash the new password
+          const hashedPassword = await bcrypt.hash(
+            password,
+            Number(bcryptSalt)
+          );
+
+          // Update the user's password
+          await Customer.findByIdAndUpdate(
+            customer._id,
+            { password: hashedPassword },
+            { new: true }
+          );
+
+          logger.info(`${customer.username} - changed password successfully`);
+          res.status(200).json({ message: "Password changed successfully." });
+        })
+        .catch((error) => {
+          logger.error(`Error finding the user by email: ${error}`);
+          res.status(400).json({ error: "Failed to change password" });
+        });
+    });
   } catch (error) {
-    logger.error(`Error changing password for customer - ${customer.email}`);
+    logger.error(`Error changing password for customer - ${email}: ${error}`);
     res.status(500).json({ error: "Failed to change password" });
   }
 }
@@ -183,7 +220,7 @@ export async function getCustomer(req, res) {
   try {
     const customer = await Customer.findById(req.params.id);
     if (!customer) {
-      return res.status(400).json({error: "This customer does not exist"});
+      return res.status(400).json({ error: "This customer does not exist" });
     } else {
       res.status(200).json(customer);
     }
