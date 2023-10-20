@@ -126,7 +126,7 @@ export async function createVendor(req, res) {
   } catch (error) {
     logger.error("Error registering vendor: ", error);
     console.log("Error registering vendor:", error);
-    return res.status(500).json({ error: "An error occurred" });
+    return res.status(400).json({ error: "An error occurred" });
   }
 }
 
@@ -137,7 +137,7 @@ export async function updateVendor(req, res) {
     const vendor = await Vendor.findById(vendorId);
     if (!vendor) {
       logger.error("The vendor does not exist");
-      return res.status(400).json({error: "The vendor does not exist!"});
+      return res.status(400).json({ error: "The vendor does not exist!" });
     } else {
       const {
         paymail,
@@ -219,7 +219,9 @@ export async function loginVendor(req, res) {
     const { name, password, fcmToken } = req.body;
 
     if (!name || !password) {
-      return res.status(400).json({error:"Please enter all the required fields" });
+      return res
+        .status(400)
+        .json({ error: "Please enter all the required fields" });
     }
 
     const user = await Vendor.findOne({ name });
@@ -251,7 +253,9 @@ export async function loginVendor(req, res) {
       });
     } else {
       logger.error("Invalid login credentials");
-      res.status(400).json({error: "The credentials you entered are invalid"});
+      res
+        .status(400)
+        .json({ error: "The credentials you entered are invalid" });
     }
   } catch (error) {
     logger.error("Invalid login credentials");
@@ -296,10 +300,10 @@ export const requestResetPassword = async (req, res) => {
       })
       .catch((error) => {
         console.error("Error sending reset password email:", error);
-        res.status(500).json({ error: "Failed to send reset password email" });
+        res.status(400).json({ error: "Failed to send reset password email" });
       });
   } catch (error) {
-    res.status(500).json({ error: "Failed to initiate password reset" });
+    res.status(400).json({ error: "Failed to initiate password reset" });
     console.log(error);
   }
 };
@@ -331,7 +335,7 @@ export async function changePassword(req, res) {
     res.status(200).json({ message: "Password changed successfully." });
   } catch (error) {
     logger.error(`Error changing password for vendor - ${vendor.name}`);
-    res.status(500).json({ error: "Failed to change password" });
+    res.status(400).json({ error: "Failed to change password" });
   }
 }
 
@@ -352,7 +356,7 @@ export async function getVendor(req, res) {
       const vendor = await Vendor.findById(vendorId);
 
       if (!vendor) {
-        return res.status(400).json({error: "This vendor does not exist"})
+        return res.status(400).json({ error: "This vendor does not exist" });
       } else {
         res.status(200).json(vendor);
       }
@@ -502,7 +506,7 @@ export async function addRider(req, res) {
     });
   } catch (error) {
     logger.error("Rider you tried to add was not found: ", error);
-    res.status(500).json({ message: "Rider not found!" });
+    res.status(400).json({ message: "Rider not found!" });
     console.error("Error adding rider to vendor:", error);
   }
 }
@@ -622,7 +626,7 @@ export async function editRider(req, res) {
   } catch (error) {
     // Handle the error, e.g., return an error response to the client
     logger.error("There was an error updating rider: ", error);
-    res.status(500).json({ error: "Error updating rider" });
+    res.status(400).json({ error: "Error updating rider" });
     console.error("Error updating rider:", error);
   }
 }
@@ -659,7 +663,7 @@ export async function deleteRider(req, res) {
       .status(200)
       .json({ message: "Rider removed from the vendor successfully" });
   } catch (error) {
-    res.status(500).json({ message: "Error removing rider from vendor" });
+    res.status(400).json({ message: "Error removing rider from vendor" });
     console.error("Error removing rider from vendor:", error);
   }
 }
