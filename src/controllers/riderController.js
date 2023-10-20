@@ -1,6 +1,6 @@
 import Rider from "../models/rider.js";
 import Vendor from "../models/vendor.js";
-import admin from 'firebase-admin'
+import admin from "firebase-admin";
 import Notification from "../models/notifications.js";
 import Order from "../models/order.js";
 import bcrypt from "bcrypt";
@@ -33,7 +33,7 @@ cloudinary.config({
 });
 
 const bcryptSalt = process.env.BCRYPT_SALT;
-//Register customer
+//Register rider
 export async function createRider(req, res) {
   try {
     const { vendorID, name, email, phoneNumber, availability } = req.body;
@@ -107,7 +107,7 @@ export async function loginRider(req, res) {
       }
       user.fcmToken = fcmToken;
 
-      await user.save()
+      await user.save();
       res.status(200).json({
         _id: user._id,
         vendorID: user.vendorID,
@@ -123,7 +123,7 @@ export async function loginRider(req, res) {
         licensePlate: user.licensePlate,
         licenseExpiry: user.licenseExpiry,
         token,
-        fcmToken: user.fcmToken
+        fcmToken: user.fcmToken,
       });
     } else {
       res.status(400);
@@ -224,9 +224,9 @@ export async function updateRider(req, res) {
             };
             riderWebsocket.send(JSON.stringify(notificationPayload));
           }
-          if(rider.fcmToken){
-          const notificationMessage = `You have been assigned a new order - Order No #${order.orderNumber} from a vendor. Check the order details on the dashboard and deliver the dishes to customer.`;
-                  
+          if (rider.fcmToken) {
+            const notificationMessage = `You have been assigned a new order - Order No #${order.orderNumber} from a vendor. Check the order details on the dashboard and deliver the dishes to customer.`;
+
             const message = {
               notification: {
                 title: "New Order",
@@ -234,7 +234,7 @@ export async function updateRider(req, res) {
               },
               token: rider.fcmToken, // Rider's FCM token
             };
-      
+
             try {
               await admin.messaging().send(message);
               console.log("Push notification sent to rider:", rider.email);
@@ -294,7 +294,7 @@ export async function updateRider(req, res) {
         arrayFilters: [{ "rider.riderId": riderId }],
       }
     );
-    const vendors = await Vendor.find()
+    const vendors = await Vendor.find();
     await redisClient.set("vendors", JSON.stringify(vendors));
 
     res.status(200).json(updatedRider);
@@ -323,7 +323,7 @@ export const updateRiderOrder = async (req, res) => {
     rider.order[orderIndex].status = status;
 
     // Save the rider document to persist the changes
-    rider.markModified("order")
+    rider.markModified("order");
     await rider.save();
     return res.status(200).json({ message: "Order updated successfully" });
   } catch (err) {
@@ -343,7 +343,11 @@ export const requestResetPassword = async (req, res) => {
   try {
     const user = await Rider.findOne({ email });
 
-    if (!user) throw new Error("User does not exist");
+    if (!user) {
+      return res
+        .status(400)
+        .json({ error: "An account with this email address does not exist" });
+    }
 
     const userId = user.id; // Get the user's ID
 
@@ -351,56 +355,91 @@ export const requestResetPassword = async (req, res) => {
       expiresIn: "1h",
     }); // Generate the reset token
 
-    const resetLink = `${clientUrl}/rider/reset-password?token=${resetToken}\n\n This link expires in an hour`;
+    const resetLink = `${clientUrl}/rider/reset-password/${resetToken}`;
 
     const msg = {
       to: email,
       from: "Mobileeatbyosumo@gmail.com", //remember to change this to the official client side email
       subject: "Password reset for Mobile eats account",
-      text: `Click the following link to reset your password: ${resetLink}`,
+      text: `Click the following link to reset your password: ${resetLink} \n\n This link expires in an hour`,
     };
     sgMail
       .send(msg)
       .then(() => {
-        res.status(200).json({ message: "Reset password email sent" });
+        res.status(200).json({
+          message: "Password reset link has been sent to your email address",
+        });
       })
       .catch((error) => {
-        console.error("Error sending reset password email:", error);
-        res.status(500).json({ error: "Failed to send reset password email" });
+        logger.error(`Error sending reset password email: ${error}`);
+        res.status(400).json({ error: "Failed to send reset password email" });
       });
   } catch (error) {
-    console.log(error);
-    res.status(500).json({ error: "Failed to initiate password reset" });
+    logger.error(`An error occured when initiating password reset - ${error}`);
+    res.status(400).json({ error: "Failed to initiate password reset" });
   }
 };
 
 export async function changePassword(req, res) {
-  const { email, password } = req.body;
-  if (!email || !password) {
+  const { email, password, token } = req.body;
+
+  if (!email || !password || !token) {
     return res
       .status(400)
       .json({ message: "Please enter all the required fields" });
   }
-  const rider = await Rider.findOne({ email });
-  try {
-    // Find the user by email
-    const rider = await Rider.findOne({ email });
-    if (!rider) {
-      return res.status(404).json({ error: "User not found" });
-    }
-    // Hash the new password
-    const hashedPassword = await bcrypt.hash(password, Number(bcryptSalt));
 
-    // Update the user's password
-    await Rider.findByIdAndUpdate(
-      rider._id, // Assuming _id is the user's unique identifier
-      { password: hashedPassword },
-      { new: true }
-    );
-    logger.info(`${rider.email} - changed password successfully`);
-    res.status(200).json({ message: "Password changed successfully." });
+  try {
+    // Verify the token's authenticity
+    jwt.verify(token, process.env.JWT_SECRET, (err, decodedToken) => {
+      if (err) {
+        return res.status(401).json({ error: "Invalid or expired token" });
+      }
+
+      // Extract the user's ID from the decoded token
+      const userId = decodedToken.userId;
+
+      // Find the user by email
+      Rider.findOne({ email })
+        .then(async (rider) => {
+          if (!rider) {
+            return res
+              .status(404)
+              .json({ error: "Rider with this email does not exist" });
+          }
+
+          // Verify that the token's user ID matches the user's ID
+          if (rider._id.toString() !== userId) {
+            return res
+              .status(401)
+              .json({ error: "Invalid token for this rider" });
+          }
+
+          // Hash the new password
+          const hashedPassword = await bcrypt.hash(
+            password,
+            Number(bcryptSalt)
+          );
+
+          // Update the user's password
+          await Rider.findByIdAndUpdate(
+            rider._id,
+            { password: hashedPassword },
+            { new: true }
+          );
+
+          logger.info(`Rider - ${rider.name} - changed password successfully`);
+          res.status(200).json({ message: "Password changed successfully." });
+        })
+        .catch((error) => {
+          logger.error(`Error finding the user by email: ${error}`);
+          res
+            .status(400)
+            .json({ error: "Failed to change password for rider" });
+        });
+    });
   } catch (error) {
-    logger.error(`Error changing password for rider - ${rider.email}`);
+    logger.error(`Error changing password for rider - ${email}: ${error}`);
     res.status(500).json({ error: "Failed to change password" });
   }
 }

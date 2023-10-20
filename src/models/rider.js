@@ -1,6 +1,5 @@
 import mongoose from "mongoose";
 const riderSchema = new mongoose.Schema({
-
   name: {
     type: String,
     required: true,
@@ -11,54 +10,57 @@ const riderSchema = new mongoose.Schema({
     // unique: true,
   },
   image: {
-    type: String
+    type: String,
   },
   password: {
-    type: String
+    type: String,
   },
   phoneNumber: {
     type: String,
     required: true,
   },
   availability: {
-    type: String
+    type: String,
   },
   paymail: {
-    type: String
+    type: String,
   },
   publicKey: {
-    type: String
+    type: String,
   },
   secretKey: {
-    type: String
+    type: String,
   },
-  address:{
-    type:String
+  address: {
+    type: String,
   },
-  latitude:{
-    type: Number
+  latitude: {
+    type: Number,
   },
   longitude: {
-    type: Number
+    type: Number,
   },
-  licenseExpiry:{
-    type: String
+  licenseExpiry: {
+    type: String,
   },
-  licensePlate:{
-    type: String
+  licensePlate: {
+    type: String,
   },
-  id_image:{
-    type: String
+  id_image: {
+    type: String,
   },
-  orderId:{
+  orderId: {
     type: mongoose.Schema.Types.ObjectId,
   },
-  order:{
-    type:Array
+  order: {
+    type: Array,
   },
-  fcmToken:{
-    type: String
-  }
+  fcmToken: {
+    type: String,
+  },
+  token: {
+    type: String, //Used in password reset
+  },
 });
 
 export default mongoose.model("Rider", riderSchema);
