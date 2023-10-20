@@ -124,13 +124,13 @@ export const requestResetPassword = async (req, res) => {
       to: email,
       from: "Mobileeatbyosumo@gmail.com", //remember to change this to the official client side email
       subject: "Password reset for Mobile eats account",
-      text: `Click the following link to reset your password: ${resetLink}`,
+      text: `Click the following link to reset your password: ${resetLink} \n\n This link expires in an hour`,
     };
     sgMail
       .send(msg)
       .then(() => {
         res.status(200).json({
-          message: "Reset password link has been sent to your email address",
+          message: "Password reset link has been sent to your email address",
         });
       })
       .catch((error) => {
@@ -191,7 +191,9 @@ export async function changePassword(req, res) {
             { new: true }
           );
 
-          logger.info(`${customer.username} - changed password successfully`);
+          logger.info(
+            `Customer - ${customer.username} - changed password successfully`
+          );
           res.status(200).json({ message: "Password changed successfully." });
         })
         .catch((error) => {
