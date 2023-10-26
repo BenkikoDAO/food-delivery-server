@@ -363,7 +363,7 @@ export async function getVendor(req: Request, res: Response) {
     const vendor = await Vendor.findById(vendorId);
 
     if (!vendor) {
-      res.status(404).json({ message: "Vendor not found" });
+      return res.status(404).json({ message: "Vendor not found" });
     } else {
       res.status(200).json(vendor);
     }
