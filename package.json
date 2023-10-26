@@ -12,6 +12,7 @@
     "cors": "^2.8.5",
     "dotenv": "^16.1.4",
     "express": "^4.18.2",
+    "express-rate-limit": "^7.1.2",
     "express-session": "^1.17.3",
     "firebase-admin": "^11.10.1",
     "geolib": "^3.3.4",
@@ -20,7 +21,7 @@
     "mongoose": "^7.3.0",
     "morgan": "^1.10.0",
     "multer": "^1.4.5-lts.1",
-    "nanoid": "^4.0.2",
+    "nanoid": "^3.3.4",
     "node-geocoder": "^4.2.0",
     "nodemailer": "^6.9.3",
     "redis": "^4.6.8",
@@ -30,21 +31,33 @@
   },
   "description": "This is the backend server for a food delivery web application. It is built using Node.js and MongoDB to handle vendor and customer data, order management, and delivery calculations.\r ### Features",
   "devDependencies": {
-    "nodemon": "^3.0.1"
+    "@types/bcrypt": "^5.0.1",
+    "@types/body-parser": "^1.19.4",
+    "@types/cors": "^2.8.15",
+    "@types/dotenv": "^8.2.0",
+    "@types/express": "^4.17.20",
+    "@types/geolib": "^2.0.23",
+    "@types/jsonwebtoken": "^9.0.4",
+    "@types/multer": "^1.4.9",
+    "@types/node": "^20.8.8",
+    "nodemon": "^3.0.1",
+    "ts-node": "^10.9.1",
+    "typescript": "^5.2.2"
   },
   "homepage": "https://github.com/munene-m/food-delivery-server#readme",
   "keywords": [],
   "license": "ISC",
-  "main": "src/index.js",
+  "main": "./src/index.ts",
   "name": "mobile-eats",
   "repository": {
     "type": "git",
     "url": "git+https://github.com/munene-m/food-delivery-server.git"
   },
   "scripts": {
-    "start": "nodemon src/index.js",
+    "start": "nodemon ./src/index.ts",
+    "prod": "node ./dist/index.js",
     "test": ""
   },
-  "type": "module",
+  "type": "commonjs",
   "version": "1.0.0"
 }
