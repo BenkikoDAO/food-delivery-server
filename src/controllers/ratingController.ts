@@ -1,5 +1,5 @@
 import { Request, Response } from "express";
-
+import redisClient from "../helpers/redisClient";
 import Vendor from "../models/vendor";
 import Customer from "../models/customer";
 import Rating from "../models/rating";
@@ -7,6 +7,7 @@ import Rating from "../models/rating";
 export async function postRating(req: Request, res: Response) {
   try {
     const { rating, vendorName, customerId } = req.body;
+    const redisKey = "vendors";
 
     if (!rating || !vendorName || !customerId) {
       return res.status(400).json("All fields are required");
@@ -31,7 +32,6 @@ export async function postRating(req: Request, res: Response) {
     });
 
     await newRating.save();
-
     // Calculate the new average rating for the vendor
     const ratings = await Rating.find({ vendorName });
 
@@ -44,6 +44,9 @@ export async function postRating(req: Request, res: Response) {
     // Update the vendor's rating field in the Vendor model
     vendor.rating = parseFloat(averageRating.toFixed(1));
     await vendor.save();
+    //update cache
+    const vendors = await Vendor.find();
+    await redisClient.set(redisKey, JSON.stringify(vendors));
 
     res.status(201).json({ message: "Rating posted successfully" });
   } catch (error) {
