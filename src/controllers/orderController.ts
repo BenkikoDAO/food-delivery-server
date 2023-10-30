@@ -23,7 +23,7 @@ export async function createOrder(req: Request, res: Response) {
   // if (!wss) {
   //   throw new Error("WebSocket server is missing");
   // }
-  const processedVendors = new Set();
+  const processedVendors = new Set<string>();
   for (const vendorName of vendorNames) {
     if (processedVendors.has(vendorName)) {
       continue; // Skip this vendor if already processed
