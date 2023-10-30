@@ -356,22 +356,24 @@ export async function getVendor(req: Request, res: Response) {
     if (cachedData) {
       const parsedData = JSON.parse(cachedData);
       const vendor = parsedData.find((item: any) => item._id === req.params.id);
-      if (vendor) {
+      if (!vendor) {
+        return res.status(404).json({ message: "Vendor not found" });
+      } else {
+        res.status(200).json(vendor);
+      }
+    } else {
+      const vendor = await Vendor.findById(vendorId);
+
+      if (!vendor) {
+        return res.status(404).json({ message: "Vendor not found" });
+      } else {
         res.status(200).json(vendor);
       }
     }
-    const vendor = await Vendor.findById(vendorId);
-
-    if (!vendor) {
-      return res.status(404).json({ message: "Vendor not found" });
-    } else {
-      res.status(200).json(vendor);
-    }
   } catch (error) {
-    res.status(500).json({ message: "An error occurred" });
+    res.status(400).json({ message: "An error occurred" });
   }
 }
-
 export async function getVendors(req: Request, res: Response) {
   try {
     const redisKey = "vendors";
@@ -380,8 +382,8 @@ export async function getVendors(req: Request, res: Response) {
     const cachedData = await redisClient.get(redisKey);
 
     if (cachedData) {
-      // Data found in cache, send it as a response
-      res.status(200).json(JSON.parse(cachedData));
+      const parsedData = JSON.parse(cachedData);
+      res.status(200).json(parsedData);
     } else {
       // Data not found in cache, fetch it from the database
       const vendors = await Vendor.find();
