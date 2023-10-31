@@ -143,6 +143,10 @@ export async function updateVendor(req: Request, res: Response) {
     const vendorId = req.params.id;
     const redisKey = `vendor:${vendorId}`;
     const vendor = await Vendor.findById(vendorId);
+
+    if (!vendorId) {
+      return res.status(404).json({ error: "Please provide vendor id" });
+    }
     if (!vendor) {
       logger.error("The vendor does not exist");
       return res.status(400).json({ error: "The vendor does not exist!" });
@@ -569,6 +573,12 @@ export async function editRider(req: Request, res: Response) {
   let image;
   let id_image;
   let hashedPassword = null;
+
+  if (!riderId || !id) {
+    return res
+      .status(404)
+      .json({ error: "Please provide rider id and vendor id in params" });
+  }
 
   try {
     const vendor = await Vendor.findById(id);

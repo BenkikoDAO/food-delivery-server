@@ -160,6 +160,9 @@ export async function loginRider(req: Request, res: Response) {
 export async function updateRider(req: Request, res: Response) {
   const riderId = req.params.id;
   const rider = await Rider.findById(riderId);
+  if (!riderId) {
+    return res.status(404).json({ error: "Please provide rider id" });
+  }
 
   // const wss: WebSocket.Server | undefined = req.app.get("wss");
   // if (!wss) {
@@ -334,6 +337,10 @@ export async function updateRider(req: Request, res: Response) {
 export const updateRiderOrder = async (req: Request, res: Response) => {
   const riderId = req.params.id;
   const { orderId, status } = req.body;
+
+  if (!riderId) {
+    return res.status(404).json({ error: "Please provide rider id" });
+  }
 
   try {
     const rider = await Rider.findById(riderId);
@@ -546,6 +553,9 @@ export async function getRiders(req: Request, res: Response) {
 export async function deleteRider(req: Request, res: Response) {
   try {
     const riderId = req.params.id;
+    if (!riderId) {
+      return res.status(404).json({ error: "Please provide rider id" });
+    }
 
     const rider = await Rider.findById(req.params.id);
     if (!rider) {
