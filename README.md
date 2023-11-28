@@ -15,12 +15,10 @@ This is the backend server for a food delivery web application. It is built usin
 
 - Typescript
 - Mongo DB
+- Docker
 - Mongoose
-- JWT for authentication
-- bcrypt for password hashing
-- nodemailer for email notifications
-- sendgrid to send the emails to users
-- geolib to calculate geographical distances
+- Nodemailer
+- Sendgrid
 
 ### Prerequisites
 
