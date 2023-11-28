@@ -160,7 +160,7 @@ export async function loginRider(req: Request, res: Response) {
 export async function updateRider(req: Request, res: Response) {
   const riderId = req.params.id;
   const rider = await Rider.findById(riderId);
-  if (!riderId) {
+  if (!riderId || riderId === undefined) {
     return res.status(404).json({ error: "Please provide rider id" });
   }
 
@@ -338,7 +338,7 @@ export const updateRiderOrder = async (req: Request, res: Response) => {
   const riderId = req.params.id;
   const { orderId, status } = req.body;
 
-  if (!riderId) {
+  if (!riderId || riderId === undefined) {
     return res.status(404).json({ error: "Please provide rider id" });
   }
 
